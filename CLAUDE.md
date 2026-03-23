@@ -16,7 +16,7 @@ Goals:
 
 - NEVER fabricate user quotes
 - NEVER break output schema (see output-spec.md)
-- NEVER commit secrets
+- NEVER commit secrets or .env files
 - KEEP changes small and scoped
 - DO NOT refactor unrelated code
 - FOLLOW repo structure strictly
@@ -64,6 +64,31 @@ Claude must preserve this architecture.
 
 ---
 
+## Required Scripts and Checks
+
+Claude must use the real repository scripts and run them in this order before completing implementation tasks.
+
+Expected scripts:
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+
+If a required script does not exist:
+- inspect the repo first
+- add it only if necessary
+- do not invent duplicate scripts if an equivalent already exists
+
+---
+
+## Package Manager Rule
+
+- The project package manager is `pnpm`.
+- Claude must use `pnpm` for dependency installation, scripts, and workspace commands.
+- Claude must not use npm, yarn, or bun in this repository.
+- Claude must inspect `package.json`, `pnpm-lock.yaml`, and workspace config before adding dependencies.
+
+---
+
 ## Development Workflow (MANDATORY)
 
 For every task:
@@ -83,6 +108,7 @@ For every task:
    - output matches spec
    - no hallucination
    - no schema drift
+   - run tests
 
 5. ITERATE
 
@@ -103,6 +129,7 @@ For every implementation task, Claude must:
    - no hallucinated data
    - no schema violations
    - UI follows design-system.md if any UI was touched
+   - run tests
 6. Summarize:
    - what changed
    - how to test locally
@@ -197,3 +224,4 @@ Naming:
     "details": "optional"
   }
 }
+```

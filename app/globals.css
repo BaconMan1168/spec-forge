@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Color — Monochromatic Neutrals */
+  --color-bg-0: hsl(220 18% 8%);
+  --color-bg-1: hsl(220 16% 11%);
+  --color-bg-2: hsl(220 14% 14%);
+  --color-surface-0: hsl(220 12% 16%);
+  --color-surface-1: hsl(220 12% 19%);
+  --color-surface-2: hsl(220 12% 23%);
+  --color-border-subtle: hsl(220 10% 28%);
+  --color-border-strong: hsl(220 12% 38%);
+  --color-text-primary: hsl(220 15% 92%);
+  --color-text-secondary: hsl(220 10% 68%);
+  --color-text-tertiary: hsl(220 8% 48%);
+  --color-text-disabled: hsl(220 6% 32%);
+
+  /* Color — Accent */
+  --color-accent-primary: hsl(40 85% 58%);
+  --color-accent-hover: hsl(40 85% 64%);
+  --color-accent-muted: hsl(40 40% 30%);
+
+  /* Color — Analogous */
+  --color-analog-1: hsl(200 55% 55%);
+  --color-analog-2: hsl(220 55% 55%);
+  --color-analog-3: hsl(240 55% 60%);
+
+  /* Color — Semantic */
+  --color-success: hsl(150 45% 48%);
+  --color-warning: hsl(40 85% 58%);
+  --color-error: hsl(0 65% 55%);
+  --color-info: hsl(220 55% 55%);
+
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-1: 0 2px 6px hsla(220 20% 2% / 0.25);
+  --shadow-2: 0 8px 24px hsla(220 20% 2% / 0.35);
+  --shadow-3: 0 20px 60px hsla(220 20% 2% / 0.45);
+
+  /* Animation */
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 280ms;
+  --duration-page: 420ms;
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  background-color: var(--color-bg-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-This document defines the MVP data model and the responsibilities of each entity. Prisma schema should implement this model.
+This document defines the MVP data model and the responsibilities of each entity. Supabase migrations should implement this model.
 
 ## Modeling Principles
 
@@ -176,7 +176,7 @@ Only add if needed during implementation:
 
 ## Implementation Guidance
 
-- Use Prisma as the single source of truth for table structure.
+- Use Supabase migrations as the single source of truth for table structure.
 - Prefer explicit enums where useful, such as source type or input method.
 - Keep proposal field names aligned with the output schema.
 - Keep the project model stable even if a more explicit session model is added later.

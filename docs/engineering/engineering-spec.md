@@ -28,40 +28,36 @@ The MVP architecture consists of:
 
 ### Frontend
 
-- **Framework:** Next.js 16 with App Router (latest version)
-- **Styling:** Tailwind CSS v.4 (latest version)
-
-#### Rationale
-
-Next.js 16 App Router enables server components, server actions, and file-based routing. This reduces the need for a separate frontend/backend split and keeps the architecture simpler for AI-assisted development. Tailwind CSS minimizes CSS context switching and works well with AI-generated UI code.
+- **Framework:** Next.js with App Router (latest version)
+- **Styling:** Tailwind CSS (latest version)
 
 ### Backend
 
 - **Runtime model:** Next.js API routes and/or server actions
 - **Separate backend:** none
 
-#### Rationale
-
-Do not introduce Express or a separate backend service for MVP. Next.js can handle upload endpoints, analysis triggers, export generation, and project/session actions at this scale.
-
 ### Database
 
 - **Database:** Supabase Postgres (latest version)
-- **ORM:** Prisma (v.7 or latest version)
+- **Client:** Supabase JS client (`@supabase/supabase-js`, `@supabase/ssr`)
 
-#### Rationale
-
-Prisma provides a schema-first typed data model, which improves consistency for generated code. Supabase provides managed Postgres with low operational overhead.
 
 ### Authentication
 
 - **Provider:** Supabase Auth (latest version)
-- **Methods:** email/password and OAuth providers such as Google or GitHub
+- **Methods:** email/password AND OAuth providers such as Google or GitHub
 - **Session handling:** Supabase’s Next.js auth helpers or equivalent recommended package
 
-#### Rationale
+### Validation
+- **Library:** Zod (latest version)
+- **Purpose:** runtime schema validation for AI output, API inputs, parsed files, and export data
+- **Usage:** input ingestion layer, AI analysis layer, export layer, environment variable validation
 
-Do not build custom auth. Drop JWT/Passport or custom auth layers. Use Supabase Auth only.
+### Billing
+- **Provider:** Stripe (latest version)
+- **Purpose:** handle SaaS subscriptions and payments
+- **Integration:** Stripe Checkout + webhook handling
+- **Data mapping:** store `stripeCustomerId`, `stripeSubscriptionId`, and `subscriptionStatus` in user records
 
 ### AI Layer
 
@@ -255,7 +251,7 @@ Rules:
 - Keep the architecture simple enough for a single full-stack engineer.
 - Avoid introducing services not justified by MVP requirements.
 - Keep AI provider usage abstracted behind the Vercel AI SDK.
-- Keep database code aligned to Prisma schema as the single source of truth.
+- Keep database code aligned to the Supabase schema as the single source of truth.
 - Keep output structure deterministic enough that Markdown export and UI rendering do not diverge.
 
 ## Explicitly Out of Scope

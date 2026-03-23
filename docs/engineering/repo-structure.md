@@ -10,11 +10,13 @@ spec-forge/
   app/
   components/
   lib/
-  prisma/
+  supabase/
   public/
   docs/
   package.json
   tsconfig.json
-  tailwind.config.ts
+  postcss.config.mjs
   next.config.ts
+  vitest.config.ts
   .env.local
+  .env.example
