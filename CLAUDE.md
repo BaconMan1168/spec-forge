@@ -93,24 +93,33 @@ If a required script does not exist:
 
 For every task:
 
-1. EXPLORE
+1. BRANCH
+   - always work on a dedicated branch, never directly on `main`
+   - branch naming conventions:
+     - `feat/<short-description>` — new features
+     - `fix/<short-description>` — bug fixes
+     - `chore/<short-description>` — setup, config, tooling
+     - `docs/<short-description>` — documentation only
+   - create the branch before writing any code: `git checkout -b feat/my-feature`
+
+2. EXPLORE
    - read relevant docs + code
 
-2. PLAN
+3. PLAN
    - outline approach
    - list files to change
 
-3. IMPLEMENT
+4. IMPLEMENT
    - minimal, clean code
    - follow existing patterns
 
-4. VALIDATE
+5. VALIDATE
    - output matches spec
    - no hallucination
    - no schema drift
    - run tests
 
-5. ITERATE
+6. ITERATE
 
 Do NOT jump straight to coding.
 
