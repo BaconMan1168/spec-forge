@@ -14,7 +14,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary)] disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex items-center justify-center font-medium cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary)] disabled:opacity-50 disabled:pointer-events-none disabled:cursor-default";
 
   const variants: Record<Variant, string> = {
     primary:
