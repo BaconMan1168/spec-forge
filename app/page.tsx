@@ -1,7 +1,6 @@
+// app/page.tsx
+import { redirect } from "next/navigation";
+
 export default function Home() {
-  return (
-    <main>
-      <h1>SpecForge</h1>
-    </main>
-  );
+  redirect("/dashboard");
 }
