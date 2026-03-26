@@ -1,7 +1,8 @@
 // app/(app)/dashboard/page.tsx
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { NewProjectModal } from "@/components/projects/new-project-modal";
 import type { Project } from "@/lib/types/database";
 
 export default async function DashboardPage() {
@@ -17,8 +18,7 @@ export default async function DashboardPage() {
         <h1 className="text-[31px] font-semibold text-[var(--color-text-primary)]">
           Your Projects
         </h1>
-        {/* TODO: Plan 3 — wire up project creation */}
-        <Button>New Project</Button>
+        <NewProjectModal />
       </div>
 
       {!projects || projects.length === 0 ? (
@@ -33,14 +33,16 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4">
           {(projects as Project[]).map((project) => (
-            <Card key={project.id}>
-              <p className="font-medium text-[var(--color-text-primary)]">
-                {project.name}
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                {new Date(project.created_at).toLocaleDateString()}
-              </p>
-            </Card>
+            <Link key={project.id} href={`/projects/${project.id}`}>
+              <Card className="hover:border-[var(--color-accent-primary)] transition-colors cursor-pointer">
+                <p className="font-medium text-[var(--color-text-primary)]">
+                  {project.name}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                  {new Date(project.created_at).toLocaleDateString()}
+                </p>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
