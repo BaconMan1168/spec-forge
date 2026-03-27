@@ -46,7 +46,7 @@ export function ProjectTile({ id, name, createdAt, index }: ProjectTileProps) {
 
           {/* Created date */}
           <p className="text-[14px] text-[var(--color-text-tertiary)]">
-            {new Date(createdAt).toLocaleDateString(undefined, {
+            {new Date(createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",
               day: "numeric",
