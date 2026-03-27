@@ -282,6 +282,16 @@ hover-bg: error / 20
 ALL buttons must use `cursor: pointer` on hover.
 Never use `cursor: default` on interactive elements.
 
+### Interactive Elements
+
+ALL clickable non-button elements must also use `cursor: pointer`:
+- Cards acting as clickable surfaces
+- Icon-only buttons and icon wrappers
+- Clickable list rows and batch cards
+- Any `<div>` or `<span>` with an `onClick` handler
+
+Never use `cursor: default` on any interactive element.
+
 ### Hover Animation
 
 All buttons:
