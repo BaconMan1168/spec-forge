@@ -420,6 +420,46 @@ Stagger lists by 40ms.
 - flashing colors
 - fast looping motion
 
+---
+
+## 8.7 Card / Surface Hover Animation Standards
+
+Card hover must animate at least THREE properties simultaneously to feel rich and dimensional:
+
+1. **transform** — scale + translateY
+2. **box-shadow** — increases on hover (depth illusion)
+3. **border-color** — highlights on hover
+
+### Required values
+
+```
+transition-property: transform, box-shadow, border-color
+duration: 320ms          ← minimum; never below 250ms
+easing: cubic-bezier(0.22, 1, 0.36, 1)
+scale: 1.02              ← design-system max (§8.2)
+translateY: -2px         ← design-system max (§8.2)
+shadow: shadow-2 → shadow-3
+border: border-subtle → border-strong
+```
+
+### Why duration matters
+
+Animations under 200ms feel mechanical and abrupt. The 320ms duration with
+the premium ease curve gives the card time to "settle" into its hover state,
+making the interaction feel intentional and physical rather than instant.
+
+### Tailwind implementation
+
+```tsx
+className="... transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]"
+```
+
+### Forbidden for card hover
+
+- `transition-all` (too broad, causes repaints on every property)
+- `duration` below 250ms
+- Spring physics on hover (§8.6)
+
 
 # =========================================================
 # 9. Images & Iconography
