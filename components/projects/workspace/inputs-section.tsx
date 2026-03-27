@@ -93,6 +93,7 @@ export function InputsSection({ files, projectId }: InputsSectionProps) {
               batch={batch}
               onDelete={() => handleDelete(batch.sourceLabel)}
               isDeleting={isPending}
+              projectId={projectId}
             />
           ))}
         </div>

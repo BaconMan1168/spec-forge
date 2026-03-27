@@ -1,5 +1,8 @@
+"use client";
+
+import Link from "next/link";
 import type { FeedbackFile } from "@/lib/types/database";
-import { Trash2, FileText, Clipboard } from "lucide-react";
+import { Trash2, FileText, Clipboard, Copy } from "lucide-react";
 
 export type BatchGroup = {
   sourceLabel: string;
@@ -22,19 +25,31 @@ interface BatchCardProps {
   batch: BatchGroup;
   onDelete: () => void;
   isDeleting: boolean;
+  projectId: string;
 }
 
-export function BatchCard({ batch, onDelete, isDeleting }: BatchCardProps) {
+export function BatchCard({ batch, onDelete, isDeleting, projectId }: BatchCardProps) {
   const latestDate = batch.files.reduce(
     (max, f) => (f.created_at > max ? f.created_at : max),
     batch.files[0].created_at
   );
-  const Icon = batch.badge === "Paste" ? Clipboard : FileText;
+  const isPaste = batch.badge === "Paste";
+  const Icon = isPaste ? Clipboard : FileText;
   const fileLabel =
     batch.files.length === 1 ? "1 file" : `${batch.files.length} files`;
 
-  return (
-    <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 flex-shrink-0">
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const text = batch.files.map((f) => f.content).join("\n\n---\n\n");
+    navigator.clipboard.writeText(text);
+  };
+
+  const cardClass =
+    "flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 flex-shrink-0 transition-[transform,box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]";
+
+  const inner = (
+    <>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-[var(--color-surface-1)] text-[var(--color-text-secondary)]">
         <Icon size={15} strokeWidth={1.7} />
       </div>
@@ -53,14 +68,34 @@ export function BatchCard({ batch, onDelete, isDeleting }: BatchCardProps) {
       <span className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
         {batch.badge}
       </span>
+      {isPaste && (
+        <button
+          aria-label="Copy text"
+          onClick={handleCopy}
+          className="cursor-pointer flex items-center justify-center rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+        >
+          <Copy size={14} strokeWidth={1.7} />
+        </button>
+      )}
       <button
         aria-label="Delete batch"
         disabled={isDeleting}
-        onClick={onDelete}
-        className="flex items-center justify-center rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-error)] disabled:pointer-events-none disabled:opacity-50"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+        className="cursor-pointer flex items-center justify-center rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-error)] disabled:pointer-events-none disabled:opacity-50"
       >
         <Trash2 size={14} strokeWidth={1.7} />
       </button>
-    </div>
+    </>
   );
+
+  if (isPaste) {
+    const href = `/projects/${projectId}/inputs/${encodeURIComponent(batch.sourceLabel)}`;
+    return (
+      <Link href={href} className={`${cardClass} cursor-pointer`}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className={cardClass}>{inner}</div>;
 }
