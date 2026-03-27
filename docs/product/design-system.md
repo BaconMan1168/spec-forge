@@ -113,7 +113,7 @@ Do NOT mix analogous colors with complementary accents inside one component.
 
 Primary font:
 
-Inter
+Outfit
 
 Fallback:
 system-ui, sans-serif
