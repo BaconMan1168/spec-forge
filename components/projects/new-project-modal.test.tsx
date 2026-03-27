@@ -81,14 +81,11 @@ describe("NewProjectModal", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("closes modal when backdrop is clicked", () => {
+  it("closes modal when backdrop (dialog wrapper) is clicked", () => {
     render(<NewProjectModal />);
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
-    const backdrop = screen
-      .getByRole("dialog")
-      .querySelector("[data-backdrop]");
-    expect(backdrop).not.toBeNull();
-    fireEvent.click(backdrop!);
+    // Click the outer dialog wrapper (the backdrop itself)
+    fireEvent.click(screen.getByRole("dialog"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

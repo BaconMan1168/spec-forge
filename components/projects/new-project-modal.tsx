@@ -7,7 +7,7 @@ import { createProject } from "@/app/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const MODAL_TRANSITION = {
+const CARD_TRANSITION = {
   type: "tween" as const,
   duration: 0.28,
   ease: [0.22, 1, 0.36, 1] as const,
@@ -15,7 +15,7 @@ const MODAL_TRANSITION = {
 
 const BACKDROP_TRANSITION = {
   type: "tween" as const,
-  duration: 0.18,
+  duration: 0.2,
   ease: "easeOut" as const,
 };
 
@@ -28,30 +28,26 @@ export function NewProjectModal() {
 
       <AnimatePresence>
         {open && (
+          // Outer motion.div IS the backdrop — covers full viewport, click to close
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={BACKDROP_TRANSITION}
+            onClick={() => setOpen(false)}
           >
-            {/* Backdrop */}
-            <div
-              data-backdrop
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setOpen(false)}
-            />
-
-            {/* Dialog card */}
+            {/* Card — stops propagation so clicks inside don't close the modal */}
             <motion.div
-              className="relative w-full max-w-sm rounded-[var(--radius-xl)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-3)] p-8"
+              className="w-full max-w-sm rounded-[var(--radius-xl)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-3)] p-8"
               initial={{ opacity: 0, scale: 0.95, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={MODAL_TRANSITION}
+              transition={CARD_TRANSITION}
+              onClick={(e) => e.stopPropagation()}
             >
               <h2
                 id="modal-title"

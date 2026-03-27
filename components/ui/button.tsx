@@ -10,7 +10,7 @@ const HOVER = { scale: 1.02, y: -2 } as const;
 const TAP = { scale: 0.97 } as const;
 const MOTION_TRANSITION = {
   type: "tween" as const,
-  duration: 0.12,
+  duration: 0.22,
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
@@ -79,11 +79,11 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
-      {/* Shimmer sweep — primary buttons only */}
+      {/* Bottom-to-top darkening sweep — primary buttons only */}
       {isPrimary && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 ease-out group-hover:translate-x-[120%]"
+          className="pointer-events-none absolute inset-0 translate-y-full bg-black/25 transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0"
         />
       )}
       {children}
