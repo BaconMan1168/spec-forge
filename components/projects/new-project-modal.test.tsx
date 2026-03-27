@@ -7,6 +7,44 @@ vi.mock("@/app/actions/projects", () => ({
   createProject: vi.fn(),
 }));
 
+// AnimatePresence must immediately render/remove children in tests (no exit animations)
+vi.mock("motion/react", () => ({
+  motion: {
+    div: ({
+      children,
+      className,
+      initial: _i,
+      animate: _a,
+      exit: _e,
+      transition: _t,
+      ...rest
+    }: React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
+      <div className={className as string} {...(rest as React.HTMLAttributes<HTMLDivElement>)}>
+        {children}
+      </div>
+    ),
+    button: ({
+      children,
+      className,
+      whileHover: _wh,
+      whileTap: _wt,
+      transition: _tr,
+      ...rest
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      whileHover?: unknown;
+      whileTap?: unknown;
+      transition?: unknown;
+    }) => (
+      <button className={className} {...rest}>
+        {children}
+      </button>
+    ),
+  },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
+
 describe("NewProjectModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,6 +78,17 @@ describe("NewProjectModal", () => {
     render(<NewProjectModal />);
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("closes modal when backdrop is clicked", () => {
+    render(<NewProjectModal />);
+    fireEvent.click(screen.getByRole("button", { name: /new project/i }));
+    const backdrop = screen
+      .getByRole("dialog")
+      .querySelector("[data-backdrop]");
+    expect(backdrop).not.toBeNull();
+    fireEvent.click(backdrop!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
