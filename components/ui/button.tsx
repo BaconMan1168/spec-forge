@@ -1,9 +1,8 @@
 // components/ui/button.tsx
 "use client";
 
-import { motion } from "motion/react";
+import { motion, type HTMLMotionProps } from "motion/react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { type ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 
 // Shared motion config — tween only (design-system §8.3, §8.6: no spring physics)
@@ -58,7 +57,8 @@ const buttonVariants = cva(
   }
 );
 
-type ButtonProps = ComponentPropsWithoutRef<"button"> &
+type ButtonProps = Omit<HTMLMotionProps<"button">, "children"> &
+  { children?: React.ReactNode } &
   VariantProps<typeof buttonVariants>;
 
 function Button({
@@ -77,7 +77,7 @@ function Button({
       whileTap={TAP}
       transition={MOTION_TRANSITION}
       className={cn(buttonVariants({ variant, size, className }))}
-      {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+      {...props}
     >
       {/* Shimmer sweep — primary buttons only */}
       {isPrimary && (
