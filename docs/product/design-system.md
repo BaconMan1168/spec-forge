@@ -245,17 +245,69 @@ Transparency must remain subtle.
 
 ## Buttons
 
+### Variants
+
 Primary:
 bg: accent-primary
 text: bg-0
 radius: pill
-padding: 16px 24px
+padding: 16px 24px (py-4 px-6)
 shadow: shadow-1
+hover-bg: accent-hover
+hover-shadow: shadow-2
 
 Secondary:
 bg: surface-1
 border: border-subtle
 text: text-primary
+hover-bg: surface-2
+hover-border: border-strong
+
+Ghost:
+bg: transparent
+text: text-secondary
+hover-bg: surface-1
+hover-text: text-primary
+
+Destructive:
+bg: error / 10
+border: error / 20
+text: error
+hover-bg: error / 20
+
+### Cursor
+
+ALL buttons must use `cursor: pointer` on hover.
+Never use `cursor: default` on interactive elements.
+
+### Hover Animation
+
+All buttons:
+- scale: 1.02
+- translateY: -2px
+- duration: fast (120ms)
+- easing: cubic-bezier(0.22, 1, 0.36, 1)
+
+Primary buttons additionally:
+- shimmer sweep: semi-transparent white gradient (via-white/20) translates from left to right on hover
+- sweep duration: 500ms ease-out
+
+### Press / Click Animation
+
+All buttons:
+- scale: 0.97
+- duration: fast (120ms)
+- easing: cubic-bezier(0.22, 1, 0.36, 1)
+- Must feel responsive, never elastic
+- NO spring physics (forbidden per §8.6)
+
+### Implementation Notes
+
+- Use `motion.button` from `motion/react` as the base primitive
+- `whileHover={{ scale: 1.02, y: -2 }}`
+- `whileTap={{ scale: 0.97 }}`
+- `transition={{ type: "tween", duration: 0.12, ease: [0.22, 1, 0.36, 1] }}`
+- Shimmer span: `aria-hidden="true"`, absolute inset, group-hover translate from left to right
 
 ---
 
