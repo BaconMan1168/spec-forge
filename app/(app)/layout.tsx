@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { Particles } from "@/components/ui/particles";
+import { PageTransition } from "@/components/ui/page-transition";
 
 export default async function AppLayout({
   children,
@@ -46,7 +47,9 @@ export default async function AppLayout({
             <SignOutButton />
           </div>
         </header>
-        <main className="mx-auto max-w-[1200px] px-6 py-8">{children}</main>
+        <main className="mx-auto max-w-[1200px] px-6 py-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );
