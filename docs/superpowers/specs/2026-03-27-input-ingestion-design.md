@@ -70,20 +70,24 @@ Navigation: "Add inputs" button and the dashed "Add more" row on the workspace p
 
 Built using the **21st.dev multi-step form pattern** with `framer-motion` `AnimatePresence` for step transitions.
 
-#### Step 1 — Choose Input Type
+#### Step 1 — Choose Input Method
 
-- 3-tile grid selector: PDF / Text file (.txt, .docx) / Paste text
-- Tiles: icon + label + extension hint
+- 2-tile selector: **"Upload files"** / **"Paste text"**
+- Tiles: icon + label + supported formats hint
 - Selected tile: accent border + accent-dim background
 - "Next →" button advances to Step 2
 
+**Extensibility:** Adding a new file format requires zero UI changes. Only `lib/parse/parse-file.ts` (new parser case) and the dropzone `accept` string need updating. The Step 1 tiles remain unchanged.
+
 #### Step 2 — Upload or Paste + Source Label
 
-**If PDF or Text file selected:**
+**If "Upload files" selected:**
 - Dropzone: dashed accent border, upload cloud icon, "Drag & drop here or click to browse", "Multiple files · Max 10MB each"
+- Accepts: `.pdf`, `.docx`, `.txt`, `.md`, `.json` (all in one dropzone, no per-format selection)
+- Helper text lists all accepted formats so users know what to drop
 - Accepts multiple files in one batch
 
-**If Paste text selected:**
+**If "Paste text" selected:**
 - Textarea: dark surface, placeholder text
 - Single text entry per batch submission
 
@@ -138,11 +142,11 @@ Files submitted in the same batch share the same `source_type` value. Grouping i
 ### `uploadFeedbackFiles(formData: FormData)`
 
 1. Extract files array + `source_type` + `project_id` from formData
-2. Validate: file type whitelist (`.pdf`, `.txt`, `.docx`), max 10MB per file
+2. Validate: file type whitelist (`.pdf`, `.docx`, `.txt`, `.md`, `.json`), max 10MB per file
 3. Validate `source_type`: required, max 60 chars, strip non-alphanumeric except spaces/hyphens
 4. For each file:
    a. Upload original to Supabase Storage: `feedback-uploads/projects/{projectId}/{uuid}-{filename}`
-   b. Parse to UTF-8 text: `pdf-parse` for PDF, `mammoth` for DOCX, native read for TXT
+   b. Parse to UTF-8 text: `pdf-parse` for PDF, `mammoth` for DOCX, native UTF-8 read for TXT/MD, `JSON.stringify(parsed, null, 2)` for JSON
    c. Insert `FeedbackFile` record with parsed content + word count + storage URL
    d. On parse failure: record error, continue processing remaining files
 5. Return `{ succeeded: FeedbackFile[], failed: { name: string, error: string }[] }`
@@ -168,11 +172,15 @@ Files submitted in the same batch share the same `source_type` value. Grouping i
 
 ## File Parsing
 
-| Type | Library | Notes |
-|---|---|---|
-| `.pdf` | `pdf-parse` (already installed) | Extract `.text` field |
-| `.docx` | `mammoth` (already installed) | `extractRawText()` |
-| `.txt` | Native `Buffer.toString('utf-8')` | Direct read |
+| Extension | MIME type(s) | Library | Notes |
+|---|---|---|---|
+| `.pdf` | `application/pdf` | `pdf-parse` (installed) | Extract `.text` field |
+| `.docx` | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `mammoth` (installed) | `extractRawText()` |
+| `.txt` | `text/plain` | Native `Buffer.toString('utf-8')` | Direct UTF-8 read |
+| `.md` | `text/markdown`, `text/plain` | Native `Buffer.toString('utf-8')` | Markdown is plain text; parser is identical to .txt |
+| `.json` | `application/json` | Native `JSON.parse` + `JSON.stringify` | Parsed then pretty-printed for readability |
+
+**Adding a new format:** add an entry to `SUPPORTED_MIME_TYPES` in `lib/parse/parse-file.ts`, add a parser case in `parseFileToText`, and add the extension to the dropzone `accept` string in `step-upload.tsx`. No other files change.
 
 Parse errors per file are caught individually — one failure does not abort the batch.
 
@@ -180,7 +188,7 @@ Parse errors per file are caught individually — one failure does not abort the
 
 ## Validation & Error Handling
 
-- **Client-side:** File type check before upload (whitelist), file size check (<10MB), source label required before submit
+- **Client-side:** File extension check before upload (whitelist: `.pdf`, `.docx`, `.txt`, `.md`, `.json`), file size check (<10MB), source label required before submit
 - **Server-side:** Re-validate type + size, sanitize source label, catch per-file parse errors
 - **UI:** Per-file error list shown in post-submit state for any failed files; succeeded files still displayed
 
@@ -205,16 +213,15 @@ components/
       locked-section.tsx      ← Reusable locked placeholder
     inputs/
       add-input-form.tsx      ← Multi-step form (framer-motion)
-      step-type-select.tsx    ← Step 1: type tiles
-      step-upload.tsx         ← Step 2a: dropzone
+      step-type-select.tsx    ← Step 1: Upload / Paste tiles (2 options)
+      step-upload.tsx         ← Step 2a: dropzone (all supported formats)
       step-paste.tsx          ← Step 2b: textarea
-      step-source-label.tsx   ← Source label input (shared)
 app/
   actions/
     feedback-files.ts         ← Server actions (upload, paste, list, delete)
 lib/
   parse/
-    parse-file.ts             ← File parsing logic (pdf, docx, txt)
+    parse-file.ts             ← File parsing registry (pdf, docx, txt, md, json)
 ```
 
 ---

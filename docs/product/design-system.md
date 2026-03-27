@@ -14,6 +14,8 @@
   - analogous → scales & harmony
 - Soft depth (glass + subtle shadows)
 - No arbitrary values — everything derives from tokens below
+- Slow, smooth, and fluid animations
+- ALWAYS use the frontend design plugin
 
 
 # =========================================================
@@ -288,9 +290,6 @@ All buttons:
 - duration: fast (120ms)
 - easing: cubic-bezier(0.22, 1, 0.36, 1)
 
-Primary buttons additionally:
-- shimmer sweep: semi-transparent white gradient (via-white/20) translates from left to right on hover
-- sweep duration: 500ms ease-out
 
 ### Press / Click Animation
 

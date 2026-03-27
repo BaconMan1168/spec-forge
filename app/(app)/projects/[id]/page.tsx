@@ -61,12 +61,13 @@ export default async function ProjectPage({
         </div>
 
         <div className="flex shrink-0 items-center gap-2 pt-1">
-          <Button variant="secondary" size="sm" asChild>
-            <Link href={`/projects/${id}/add`}>
-              <Plus size={13} />
-              Add inputs
-            </Link>
-          </Button>
+          <Link
+            href={`/projects/${id}/add`}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+          >
+            <Plus size={13} />
+            Add inputs
+          </Link>
           <Button
             size="sm"
             disabled={!hasInputs}

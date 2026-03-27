@@ -5,9 +5,18 @@ import { StepPaste } from "./step-paste";
 
 vi.mock("motion/react", () => ({
   motion: {
-    button: ({ children, className, whileHover: _wh, whileTap: _wt, transition: _tr, ...rest }: any) => (
-      <button className={className} {...rest}>{children}</button>
-    ),
+    button: ({
+      children,
+      className,
+      whileHover: _wh,
+      whileTap: _wt,
+      transition: _tr,
+      ...rest
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      whileHover?: unknown;
+      whileTap?: unknown;
+      transition?: unknown;
+    }) => <button className={className} {...rest}>{children}</button>,
   },
 }));
 

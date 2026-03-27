@@ -4,9 +4,11 @@
 
 **Goal:** Build the project workspace hub (`/projects/[id]`) and a multi-step animated input form (`/projects/[id]/add`) with file parsing and Supabase Storage.
 
-**Architecture:** The workspace page is a server component fetching project + files, rendering scroll-animated sections (Inputs, Themes locked, Proposals locked). The add-inputs route is a client-side multi-step form using `motion/react` `AnimatePresence`. Files are parsed server-side via `pdf-parse`/`mammoth`, stored in Supabase Storage, and inserted as `FeedbackFile` records. Files are grouped by `source_type` label for display (no DB batch concept — Option B).
+**Architecture:** The workspace page is a server component fetching project + files, rendering scroll-animated sections (Inputs, Themes locked, Proposals locked). The add-inputs route is a client-side multi-step form using `motion/react` `AnimatePresence`. Files are parsed server-side via `pdf-parse`/`mammoth`/native-read, stored in Supabase Storage, and inserted as `FeedbackFile` records. Files are grouped by `source_type` label for display (no DB batch concept — Option B). Step 1 of the form offers two choices only: **Upload files** or **Paste text** — adding new file formats requires zero UI changes.
 
 **Tech Stack:** Next.js 15 App Router, `motion/react`, shadcn `Button` (existing), Lucide React icons, Supabase Storage + Postgres, `pdf-parse`, `mammoth`, Vitest + Testing Library, Tailwind v4 CSS vars.
+
+**Supported file formats:** `.pdf`, `.docx`, `.txt`, `.md`, `.json`. Adding a new format = 1 entry in `SUPPORTED_MIME_TYPES` + 1 parser case in `parseFileToText` + update `ACCEPTED_EXTENSIONS` string. No component changes.
 
 ---
 
@@ -25,7 +27,7 @@
 - `components/projects/workspace/locked-section.test.tsx`
 - `components/projects/workspace/inputs-section.tsx` — scrollable container + delete logic
 - `components/projects/workspace/inputs-section.test.tsx`
-- `components/projects/inputs/step-type-select.tsx` — Step 1: type tile grid + `INPUT_TYPES` config
+- `components/projects/inputs/step-type-select.tsx` — Step 1: Upload / Paste 2-tile selector + `INPUT_TYPES` config
 - `components/projects/inputs/step-type-select.test.tsx`
 - `components/projects/inputs/step-upload.tsx` — Step 2a: dropzone + source label
 - `components/projects/inputs/step-upload.test.tsx`
@@ -149,6 +151,12 @@ describe("isSupportedMimeType", () => {
   it("accepts text/plain", () => {
     expect(isSupportedMimeType("text/plain")).toBe(true);
   });
+  it("accepts text/markdown", () => {
+    expect(isSupportedMimeType("text/markdown")).toBe(true);
+  });
+  it("accepts application/json", () => {
+    expect(isSupportedMimeType("application/json")).toBe(true);
+  });
   it("accepts docx mime", () => {
     expect(isSupportedMimeType(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -166,9 +174,25 @@ describe("countWords", () => {
 });
 
 describe("parseFileToText", () => {
-  it("parses plain text", async () => {
+  it("parses plain text (.txt)", async () => {
     const result = await parseFileToText(Buffer.from("hello"), "text/plain");
     expect(result).toBe("hello");
+  });
+  it("parses markdown (.md via text/markdown)", async () => {
+    const result = await parseFileToText(Buffer.from("# Hello\nworld"), "text/markdown");
+    expect(result).toBe("# Hello\nworld");
+  });
+  it("parses markdown (.md reported as text/plain by browser)", async () => {
+    const result = await parseFileToText(Buffer.from("# Hi"), "text/plain", "notes.md");
+    expect(result).toBe("# Hi");
+  });
+  it("parses JSON and pretty-prints it", async () => {
+    const result = await parseFileToText(
+      Buffer.from('{"key":"value"}'),
+      "application/json"
+    );
+    expect(result).toContain('"key"');
+    expect(result).toContain('"value"');
   });
   it("calls pdf-parse and returns trimmed text", async () => {
     const result = await parseFileToText(Buffer.from("x"), "application/pdf");
@@ -180,6 +204,11 @@ describe("parseFileToText", () => {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
     expect(result).toBe("docx content");
+  });
+  it("throws on invalid JSON", async () => {
+    await expect(
+      parseFileToText(Buffer.from("not json"), "application/json")
+    ).rejects.toThrow();
   });
 });
 ```
@@ -197,10 +226,14 @@ Expected: `Cannot find module './parse-file'`
 // lib/parse/parse-file.ts
 import mammoth from "mammoth";
 
+// To add a new format: add its MIME type here, add a case in parseFileToText,
+// and add the extension to ACCEPTED_EXTENSIONS in step-upload.tsx. Nothing else changes.
 export const SUPPORTED_MIME_TYPES = [
   "application/pdf",
-  "text/plain",
+  "text/plain",     // .txt and .md (some browsers report .md as text/plain)
+  "text/markdown",  // .md on browsers that send the correct MIME
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/json",
 ] as const;
 
 export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
@@ -213,25 +246,36 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+// fileName is used to resolve ambiguity when the browser reports .md files as text/plain
 export async function parseFileToText(
   buffer: Buffer,
-  mimeType: SupportedMimeType
+  mimeType: string,
+  fileName?: string
 ): Promise<string> {
-  if (mimeType === "application/pdf") {
-    // pdf-parse is CJS; esModuleInterop default import works with Vitest/Next
+  const ext = fileName?.split(".").pop()?.toLowerCase();
+
+  if (mimeType === "application/pdf" || ext === "pdf") {
     const pdfParse = (await import("pdf-parse")).default as (
       buf: Buffer
     ) => Promise<{ text: string }>;
-    const result = await pdfParse(buffer);
-    return result.text.trim();
+    return (await pdfParse(buffer)).text.trim();
   }
+
   if (
     mimeType ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    ext === "docx"
   ) {
     const result = await mammoth.extractRawText({ buffer });
     return result.value.trim();
   }
+
+  if (mimeType === "application/json" || ext === "json") {
+    const parsed = JSON.parse(buffer.toString("utf-8"));
+    return JSON.stringify(parsed, null, 2);
+  }
+
+  // text/plain, text/markdown, .txt, .md — all read as UTF-8 text
   return buffer.toString("utf-8").trim();
 }
 ```
@@ -438,7 +482,7 @@ export async function uploadFeedbackFiles(
     }
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const content = await parseFileToText(buffer, file.type as SupportedMimeType);
+      const content = await parseFileToText(buffer, file.type, file.name);
       const storagePath = `projects/${projectId}/${crypto.randomUUID()}-${file.name}`;
 
       const { error: storageError } = await supabase.storage
@@ -1057,28 +1101,34 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { StepTypeSelect } from "./step-type-select";
 
 describe("StepTypeSelect", () => {
-  it("renders all 3 type tiles", () => {
+  it("renders both method tiles", () => {
     render(<StepTypeSelect value={null} onChange={vi.fn()} onNext={vi.fn()} />);
-    expect(screen.getByText("PDF")).toBeInTheDocument();
-    expect(screen.getByText("Text file")).toBeInTheDocument();
+    expect(screen.getByText("Upload files")).toBeInTheDocument();
     expect(screen.getByText("Paste text")).toBeInTheDocument();
   });
 
-  it("Next button is disabled when no type selected", () => {
+  it("Next button is disabled when no method selected", () => {
     render(<StepTypeSelect value={null} onChange={vi.fn()} onNext={vi.fn()} />);
     expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
   });
 
-  it("calls onChange when a tile is clicked", () => {
+  it("calls onChange with 'upload' when Upload tile is clicked", () => {
     const onChange = vi.fn();
     render(<StepTypeSelect value={null} onChange={onChange} onNext={vi.fn()} />);
-    fireEvent.click(screen.getByText("PDF").closest("button")!);
-    expect(onChange).toHaveBeenCalledWith("pdf");
+    fireEvent.click(screen.getByText("Upload files").closest("button")!);
+    expect(onChange).toHaveBeenCalledWith("upload");
+  });
+
+  it("calls onChange with 'paste' when Paste tile is clicked", () => {
+    const onChange = vi.fn();
+    render(<StepTypeSelect value={null} onChange={onChange} onNext={vi.fn()} />);
+    fireEvent.click(screen.getByText("Paste text").closest("button")!);
+    expect(onChange).toHaveBeenCalledWith("paste");
   });
 
   it("calls onNext when Next is clicked with a selection", () => {
     const onNext = vi.fn();
-    render(<StepTypeSelect value="pdf" onChange={vi.fn()} onNext={onNext} />);
+    render(<StepTypeSelect value="upload" onChange={vi.fn()} onNext={onNext} />);
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     expect(onNext).toHaveBeenCalledTimes(1);
   });
@@ -1095,29 +1145,22 @@ pnpm test components/projects/inputs/step-type-select.test.tsx
 
 ```tsx
 // components/projects/inputs/step-type-select.tsx
-import { FileText, AlignLeft, Clipboard } from "lucide-react";
+import { UploadCloud, Clipboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// To add a new file format: update ACCEPTED_EXTENSIONS in step-upload.tsx and
+// add a parser in lib/parse/parse-file.ts. Do NOT add tiles here.
 export const INPUT_TYPES = [
   {
-    id: "pdf" as const,
-    label: "PDF",
-    ext: ".pdf",
-    accept: ".pdf,application/pdf",
-    icon: FileText,
-  },
-  {
-    id: "txt" as const,
-    label: "Text file",
-    ext: ".txt / .docx",
-    accept: ".txt,text/plain,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    icon: AlignLeft,
+    id: "upload" as const,
+    label: "Upload files",
+    description: "PDF, DOCX, TXT, MD, JSON",
+    icon: UploadCloud,
   },
   {
     id: "paste" as const,
     label: "Paste text",
-    ext: "copy / paste",
-    accept: "",
+    description: "copy / paste",
     icon: Clipboard,
   },
 ] as const;
@@ -1135,10 +1178,10 @@ export function StepTypeSelect({ value, onChange, onNext }: StepTypeSelectProps)
     <div className="flex flex-col gap-4">
       <div>
         <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.07em] text-[var(--color-text-tertiary)]">
-          Choose input type
+          Choose input method
         </p>
-        <div className="grid grid-cols-3 gap-2">
-          {INPUT_TYPES.map(({ id, label, ext, icon: Icon }) => {
+        <div className="grid grid-cols-2 gap-2">
+          {INPUT_TYPES.map(({ id, label, description, icon: Icon }) => {
             const selected = value === id;
             return (
               <button
@@ -1146,7 +1189,7 @@ export function StepTypeSelect({ value, onChange, onNext }: StepTypeSelectProps)
                 type="button"
                 onClick={() => onChange(id)}
                 className={[
-                  "flex flex-col items-center gap-2 rounded-[var(--radius-md)] border px-3 py-4 transition-all",
+                  "flex flex-col items-center gap-2 rounded-[var(--radius-md)] border px-3 py-5 transition-all",
                   selected
                     ? "border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10"
                     : "border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-surface-2)]",
@@ -1154,18 +1197,18 @@ export function StepTypeSelect({ value, onChange, onNext }: StepTypeSelectProps)
               >
                 <div
                   className={[
-                    "flex h-9 w-9 items-center justify-center rounded-[9px]",
+                    "flex h-10 w-10 items-center justify-center rounded-[10px]",
                     selected
                       ? "bg-[var(--color-accent-primary)]/15 text-[var(--color-accent-primary)]"
                       : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]",
                   ].join(" ")}
                 >
-                  <Icon size={17} strokeWidth={1.7} />
+                  <Icon size={19} strokeWidth={1.6} />
                 </div>
                 <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
                   {label}
                 </span>
-                <span className="text-[11px] text-[var(--color-text-tertiary)]">{ext}</span>
+                <span className="text-[11px] text-[var(--color-text-tertiary)]">{description}</span>
               </button>
             );
           })}
@@ -1222,7 +1265,6 @@ vi.mock("motion/react", () => ({
 }));
 
 const baseProps = {
-  typeId: "pdf" as const,
   files: [],
   onFilesChange: vi.fn(),
   sourceLabel: "",
@@ -1237,6 +1279,11 @@ describe("StepUpload", () => {
   it("renders dropzone", () => {
     render(<StepUpload {...baseProps} />);
     expect(screen.getByText(/drag & drop/i)).toBeInTheDocument();
+  });
+
+  it("shows accepted formats hint", () => {
+    render(<StepUpload {...baseProps} />);
+    expect(screen.getByText(/pdf.*docx.*txt.*md.*json/i)).toBeInTheDocument();
   });
 
   it("renders source label input", () => {
@@ -1320,9 +1367,15 @@ pnpm test components/projects/inputs/step-upload.test.tsx components/projects/in
 import { useRef } from "react";
 import { UploadCloud, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { InputTypeId } from "./step-type-select";
 
-function validateSourceLabel(v: string): string | null {
+// To add a new file format: append its extension and MIME type here.
+// No other UI files need to change.
+export const ACCEPTED_EXTENSIONS =
+  ".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,.md,text/markdown,.json,application/json";
+
+export const ACCEPTED_FORMATS_LABEL = "PDF, DOCX, TXT, MD, JSON";
+
+export function validateSourceLabel(v: string): string | null {
   const t = v.trim();
   if (!t) return "Source label is required";
   if (t.length > 60) return "Must be 60 characters or less";
@@ -1331,7 +1384,6 @@ function validateSourceLabel(v: string): string | null {
 }
 
 interface StepUploadProps {
-  typeId: Exclude<InputTypeId, "paste">;
   files: File[];
   onFilesChange: (files: File[]) => void;
   sourceLabel: string;
@@ -1343,7 +1395,6 @@ interface StepUploadProps {
 }
 
 export function StepUpload({
-  typeId,
   files,
   onFilesChange,
   sourceLabel,
@@ -1354,10 +1405,7 @@ export function StepUpload({
   isSubmitting,
 }: StepUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const accept =
-    typeId === "pdf"
-      ? ".pdf,application/pdf"
-      : ".txt,text/plain,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const accept = ACCEPTED_EXTENSIONS;
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -1571,16 +1619,15 @@ vi.mock("@/app/actions/feedback-files", () => ({
 describe("AddInputForm", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders step 1 on load with all type tiles", () => {
+  it("renders step 1 on load with both type tiles", () => {
     render(<AddInputForm projectId="p1" />);
-    expect(screen.getByText("PDF")).toBeInTheDocument();
-    expect(screen.getByText("Text file")).toBeInTheDocument();
+    expect(screen.getByText("Upload files")).toBeInTheDocument();
     expect(screen.getByText("Paste text")).toBeInTheDocument();
   });
 
-  it("advances to step 2 after selecting a type and clicking Next", async () => {
+  it("advances to step 2 after selecting upload and clicking Next", async () => {
     render(<AddInputForm projectId="p1" />);
-    fireEvent.click(screen.getByText("PDF").closest("button")!);
+    fireEvent.click(screen.getByText("Upload files").closest("button")!);
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     await waitFor(() =>
       expect(screen.getByText(/drag & drop/i)).toBeInTheDocument()
@@ -1598,11 +1645,11 @@ describe("AddInputForm", () => {
 
   it("goes back to step 1 when Back is clicked", async () => {
     render(<AddInputForm projectId="p1" />);
-    fireEvent.click(screen.getByText("PDF").closest("button")!);
+    fireEvent.click(screen.getByText("Upload files").closest("button")!);
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     await waitFor(() => screen.getByText(/drag & drop/i));
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
-    await waitFor(() => expect(screen.getByText("PDF")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Upload files")).toBeInTheDocument());
   });
 });
 ```
@@ -1799,7 +1846,6 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
               />
             ) : (
               <StepUpload
-                typeId={selectedType as Exclude<InputTypeId, "paste">}
                 files={files}
                 onFilesChange={setFiles}
                 sourceLabel={sourceLabel}

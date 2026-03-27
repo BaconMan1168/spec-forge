@@ -15,7 +15,14 @@ vi.mock("motion/react", () => ({
       custom: _c,
       variants: _v,
       ...rest
-    }: any) => (
+    }: React.HTMLAttributes<HTMLDivElement> & {
+      initial?: unknown;
+      animate?: unknown;
+      exit?: unknown;
+      transition?: unknown;
+      custom?: unknown;
+      variants?: unknown;
+    }) => (
       <div className={className} {...rest}>
         {children}
       </div>
@@ -27,13 +34,17 @@ vi.mock("motion/react", () => ({
       whileTap: _wt,
       transition: _tr,
       ...rest
-    }: any) => (
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      whileHover?: unknown;
+      whileTap?: unknown;
+      transition?: unknown;
+    }) => (
       <button className={className} {...rest}>
         {children}
       </button>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const mockPush = vi.fn();

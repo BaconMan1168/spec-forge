@@ -8,6 +8,10 @@ export const SUPPORTED_MIME_TYPES = [
 
 export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
 
+export function isSupportedMimeType(mime: string): mime is SupportedMimeType {
+  return (SUPPORTED_MIME_TYPES as readonly string[]).includes(mime);
+}
+
 /**
  * Parse a file buffer to plain UTF-8 text.
  *
@@ -25,7 +29,10 @@ export async function parseFileToText(
 
   // PDF
   if (mimeType === "application/pdf" || ext === "pdf") {
-    const pdfParse = (await import("pdf-parse")).default;
+    // pdf-parse ships as CJS; dynamic import gives us the module object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfModule = (await import("pdf-parse")) as any;
+    const pdfParse = pdfModule.default ?? pdfModule;
     const result = await pdfParse(buffer);
     return result.text.trim();
   }

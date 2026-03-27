@@ -5,7 +5,12 @@ import { InputsSection } from "./inputs-section";
 import type { FeedbackFile } from "@/lib/types/database";
 
 vi.mock("next/link", () => ({
-  default: ({ href, children, className, ...rest }: any) => (
+  default: ({
+    href,
+    children,
+    className,
+    ...rest
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
     <a href={href} className={className} {...rest}>{children}</a>
   ),
 }));

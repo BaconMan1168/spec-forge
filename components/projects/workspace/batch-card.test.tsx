@@ -5,12 +5,26 @@ import { BatchCard, type BatchGroup } from "./batch-card";
 
 vi.mock("motion/react", () => ({
   motion: {
-    div: ({ children, className, initial: _i, animate: _a, exit: _e,
-            transition: _t, custom: _c, variants: _v, ...rest }: any) => (
-      <div className={className} {...rest}>{children}</div>
-    ),
+    div: ({
+      children,
+      className,
+      initial: _i,
+      animate: _a,
+      exit: _e,
+      transition: _t,
+      custom: _c,
+      variants: _v,
+      ...rest
+    }: React.HTMLAttributes<HTMLDivElement> & {
+      initial?: unknown;
+      animate?: unknown;
+      exit?: unknown;
+      transition?: unknown;
+      custom?: unknown;
+      variants?: unknown;
+    }) => <div className={className} {...rest}>{children}</div>,
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const batch: BatchGroup = {
