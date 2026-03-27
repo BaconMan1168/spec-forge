@@ -7,6 +7,13 @@ vi.mock("@/app/actions/projects", () => ({
   createProject: vi.fn(),
 }));
 
+// createPortal renders into document.body in jsdom; mock it to render inline
+// so screen queries and event propagation work without extra setup.
+vi.mock("react-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-dom")>();
+  return { ...actual, createPortal: (node: React.ReactNode) => node };
+});
+
 // AnimatePresence must immediately render/remove children in tests (no exit animations)
 vi.mock("motion/react", () => ({
   motion: {
