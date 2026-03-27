@@ -1,8 +1,18 @@
 // components/projects/new-project-modal.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+
+// Returns false during SSR, true on the client — no useEffect/setState needed.
+// This avoids the react-compiler "setState in effect" lint error while still
+// preventing hydration mismatches when accessing document.body.
+const useIsClient = () =>
+  useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 import { AnimatePresence, motion } from "motion/react";
 import { createProject } from "@/app/actions/projects";
 import { Button } from "@/components/ui/button";
@@ -22,15 +32,13 @@ const BACKDROP_TRANSITION = {
 
 export function NewProjectModal() {
   const [open, setOpen] = useState(false);
-  // Avoid SSR/hydration mismatch — document.body only exists on the client
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  const isClient = useIsClient();
 
   return (
     <>
       <Button onClick={() => setOpen(true)}>New Project</Button>
 
-      {mounted && createPortal(
+      {isClient && createPortal(
         <AnimatePresence>
           {open && (
             // Renders directly into document.body — escapes any parent
