@@ -17,8 +17,26 @@ vi.mock("motion/react", () => ({
       whileTap?: unknown;
       transition?: unknown;
     }) => <button className={className} {...rest}>{children}</button>,
+    div: ({
+      children,
+      className,
+      initial: _i,
+      animate: _a,
+      exit: _e,
+      transition: _t,
+      ...rest
+    }: React.HTMLAttributes<HTMLDivElement> & {
+      initial?: unknown;
+      animate?: unknown;
+      exit?: unknown;
+      transition?: unknown;
+    }) => <div className={className} {...rest}>{children}</div>,
   },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+
+const makeFile = (name: string) =>
+  new File(["content"], name, { type: "application/pdf" });
 
 const baseProps = {
   files: [],
@@ -63,5 +81,43 @@ describe("StepUpload", () => {
   it("Submit button is disabled when no files selected", () => {
     render(<StepUpload {...baseProps} files={[]} />);
     expect(screen.getByRole("button", { name: /submit/i })).toBeDisabled();
+  });
+
+  it("shows contracted file row with latest filename when 1 file selected", () => {
+    const props = { ...baseProps, files: [makeFile("report.pdf")] };
+    render(<StepUpload {...props} />);
+    expect(screen.getByText("report.pdf")).toBeInTheDocument();
+  });
+
+  it("shows 'and N more' badge when multiple files selected", () => {
+    const props = {
+      ...baseProps,
+      files: [makeFile("a.pdf"), makeFile("b.pdf"), makeFile("c.pdf")],
+    };
+    render(<StepUpload {...props} />);
+    expect(screen.getByText(/and 2 more/i)).toBeInTheDocument();
+  });
+
+  it("expands to show all filenames when toggle is clicked", () => {
+    const props = {
+      ...baseProps,
+      files: [makeFile("a.pdf"), makeFile("b.pdf")],
+    };
+    render(<StepUpload {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /show files|expand/i }));
+    expect(screen.getAllByText("a.pdf").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("b.pdf").length).toBeGreaterThan(0);
+  });
+
+  it("calls onFilesChange without the removed file when × is clicked", () => {
+    const onFilesChange = vi.fn();
+    const files = [makeFile("a.pdf"), makeFile("b.pdf")];
+    const props = { ...baseProps, files, onFilesChange };
+    render(<StepUpload {...props} />);
+    // Expand first
+    fireEvent.click(screen.getByRole("button", { name: /show files|expand/i }));
+    // Click remove on first file
+    fireEvent.click(screen.getAllByRole("button", { name: /remove/i })[0]);
+    expect(onFilesChange).toHaveBeenCalledWith([files[1]]);
   });
 });

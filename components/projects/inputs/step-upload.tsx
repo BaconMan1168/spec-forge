@@ -1,5 +1,8 @@
-import { useRef } from "react";
-import { UploadCloud, ArrowLeft } from "lucide-react";
+"use client";
+
+import { useRef, useState } from "react";
+import { UploadCloud, ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 
 // To add a new file format: append its extension and MIME type here.
@@ -40,19 +43,33 @@ export function StepUpload({
   isSubmitting,
 }: StepUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const dropped = Array.from(e.dataTransfer.files);
-    onFilesChange([...files, ...dropped]);
+    const next = [...files, ...dropped];
+    onFilesChange(next);
+    if (next.length > 1) setIsExpanded(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
-    onFilesChange([...files, ...selected]);
+    const next = [...files, ...selected];
+    onFilesChange(next);
+    if (next.length > 1) setIsExpanded(true);
+    e.target.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    const next = files.filter((_, i) => i !== index);
+    onFilesChange(next);
+    if (next.length <= 1) setIsExpanded(false);
   };
 
   const canSubmit = files.length > 0 && !isSubmitting;
+  const latestFile = files[files.length - 1];
+  const extraCount = files.length - 1;
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,10 +106,70 @@ export function StepUpload({
             onChange={handleInputChange}
           />
         </div>
+
+        {/* Collapsible file list */}
         {files.length > 0 && (
-          <p className="mt-1.5 text-[11px] text-[var(--color-text-secondary)]">
-            {files.length} file{files.length > 1 ? "s" : ""} selected
-          </p>
+          <div className="mt-2 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)]">
+            {/* Contracted header — always visible */}
+            <button
+              type="button"
+              aria-label={isExpanded ? "Collapse files" : "Show files / expand"}
+              onClick={() => setIsExpanded((v) => !v)}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--color-surface-2)]"
+            >
+              <span className="flex-1 truncate text-[12px] font-medium text-[var(--color-text-primary)]">
+                {latestFile.name}
+              </span>
+              {extraCount > 0 && (
+                <span className="shrink-0 rounded-full bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-text-tertiary)]">
+                  and {extraCount} more
+                </span>
+              )}
+              {isExpanded ? (
+                <ChevronUp size={13} className="shrink-0 text-[var(--color-text-tertiary)]" />
+              ) : (
+                <ChevronDown size={13} className="shrink-0 text-[var(--color-text-tertiary)]" />
+              )}
+            </button>
+
+            {/* Expanded list */}
+            <AnimatePresence initial={false}>
+              {isExpanded && (
+                <motion.div
+                  key="file-list"
+                  initial={{ height: 0, opacity: 0, y: 4 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: 4 }}
+                  transition={{ type: "tween", duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-[var(--color-border-subtle)] px-1 py-1">
+                    {files.map((file, index) => (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 transition-colors hover:bg-[var(--color-surface-2)]"
+                      >
+                        <span className="flex-1 truncate text-[12px] text-[var(--color-text-primary)]">
+                          {file.name}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-[var(--color-text-tertiary)]">
+                          {(file.size / 1024).toFixed(0)} KB
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${file.name}`}
+                          onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                          className="flex shrink-0 cursor-pointer items-center justify-center rounded p-0.5 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-error)]"
+                        >
+                          <X size={12} strokeWidth={2} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         )}
       </div>
 
