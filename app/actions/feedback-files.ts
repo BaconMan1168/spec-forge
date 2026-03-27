@@ -14,6 +14,22 @@ function sanitizeSourceLabel(raw: string): string {
   return raw.trim().replace(/[^a-zA-Z0-9 \-]/g, "").slice(0, 60);
 }
 
+// file.type is empty string on some browsers/OS combos (common for PDFs on Windows).
+// Fall back to extension-based detection so uploads don't silently fail.
+const EXT_MIME: Record<string, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  txt: "text/plain",
+  md: "text/markdown",
+  json: "application/json",
+};
+
+function resolveMimeType(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_MIME[ext] ?? "";
+}
+
 export type UploadResult = {
   succeeded: FeedbackFile[];
   failed: { name: string; error: string }[];
@@ -44,18 +60,21 @@ export async function uploadFeedbackFiles(
       failed.push({ name: file.name, error: "File exceeds 10 MB limit" });
       continue;
     }
-    if (!isSupportedMimeType(file.type)) {
+    const mimeType = resolveMimeType(file);
+    if (!isSupportedMimeType(mimeType)) {
       failed.push({ name: file.name, error: "Unsupported file type" });
       continue;
     }
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const content = await parseFileToText(buffer, file.type, file.name);
-      const storagePath = `projects/${projectId}/${crypto.randomUUID()}-${file.name}`;
+      const content = await parseFileToText(buffer, mimeType, file.name);
+      // Sanitize filename to prevent storage path issues with spaces/special chars
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `projects/${projectId}/${crypto.randomUUID()}-${safeName}`;
 
       const { error: storageError } = await supabase.storage
         .from("feedback-uploads")
-        .upload(storagePath, buffer, { contentType: file.type });
+        .upload(storagePath, buffer, { contentType: mimeType });
 
       if (storageError) {
         failed.push({ name: file.name, error: storageError.message });
@@ -70,7 +89,7 @@ export async function uploadFeedbackFiles(
           source_type: sourceType,
           content,
           storage_url: storagePath,
-          mime_type: file.type,
+          mime_type: mimeType,
           input_method: "upload",
           word_count: countWords(content),
         })
