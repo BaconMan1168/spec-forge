@@ -15,11 +15,7 @@ export function SignOutButton() {
   }
 
   return (
-    <Button
-      variant="secondary"
-      onClick={handleSignOut}
-      className="text-sm px-4 py-2"
-    >
+    <Button variant="secondary" onClick={handleSignOut}>
       Sign out
     </Button>
   );

@@ -1,7 +1,8 @@
 // app/(app)/dashboard/page.tsx
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { NewProjectModal } from "@/components/projects/new-project-modal";
+import { ProjectTile } from "@/components/projects/project-tile";
+import { BlurFade } from "@/components/ui/blur-fade";
 import type { Project } from "@/lib/types/database";
 
 export default async function DashboardPage() {
@@ -13,34 +14,39 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-[31px] font-semibold text-[var(--color-text-primary)]">
-          Your Projects
-        </h1>
-        {/* TODO: Plan 3 — wire up project creation */}
-        <Button>New Project</Button>
+      {/* Header row */}
+      <div className="mb-8 flex items-center justify-between">
+        <BlurFade delay={0} duration={0.28}>
+          <h1 className="text-[31px] font-semibold text-[var(--color-text-primary)]">
+            Your Projects
+          </h1>
+        </BlurFade>
+        <BlurFade delay={0.04} duration={0.28}>
+          <NewProjectModal />
+        </BlurFade>
       </div>
 
       {!projects || projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-base text-[var(--color-text-secondary)] mb-2">
-            No projects yet.
-          </p>
-          <p className="text-sm text-[var(--color-text-tertiary)]">
-            Create your first project to start analyzing feedback.
-          </p>
-        </div>
+        <BlurFade delay={0.08} duration={0.28}>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <p className="mb-2 text-base text-[var(--color-text-secondary)]">
+              No projects yet.
+            </p>
+            <p className="text-sm text-[var(--color-text-tertiary)]">
+              Create your first project to start analyzing feedback.
+            </p>
+          </div>
+        </BlurFade>
       ) : (
-        <div className="grid gap-4">
-          {(projects as Project[]).map((project) => (
-            <Card key={project.id}>
-              <p className="font-medium text-[var(--color-text-primary)]">
-                {project.name}
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                {new Date(project.created_at).toLocaleDateString()}
-              </p>
-            </Card>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {(projects as Project[]).map((project, index) => (
+            <ProjectTile
+              key={project.id}
+              id={project.id}
+              name={project.name}
+              createdAt={project.created_at}
+              index={index + 2} // +2 so first tile = delay 0.08s (heading=0, button=0.04, tile[0]=0.08, ...)
+            />
           ))}
         </div>
       )}

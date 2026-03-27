@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "SpecForge",
@@ -18,8 +17,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body>{children}</body>
+    <html lang="en" className={cn("font-sans", outfit.variable)} suppressHydrationWarning>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
