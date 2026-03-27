@@ -58,37 +58,25 @@ const BANDS = [
 
 export function AuroraBackground() {
   return (
-    <>
-      <style>{`
-        @keyframes aurora-drift {
-          0%, 100% { transform: translateX(0) skewX(-6deg) scaleY(1); }
-          30%       { transform: translateX(6%) skewX(3deg) scaleY(1.12); }
-          60%       { transform: translateX(-4%) skewX(-3deg) scaleY(0.88); }
-          80%       { transform: translateX(9%) skewX(4deg) scaleY(1.08); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .aurora-band { animation-play-state: paused !important; }
-        }
-      `}</style>
-      <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-        aria-hidden="true"
-      >
-        {BANDS.map((band, i) => (
-          <div
-            key={i}
-            data-aurora-band
-            className="aurora-band absolute left-[-10%] w-[120%] rounded-[50%]"
-            style={{
-              height: band.height,
-              top: band.top,
-              background: band.gradient,
-              filter: `blur(${band.blur})`,
-              animation: `aurora-drift ${band.duration} ease-in-out ${band.delay} infinite ${band.direction}`,
-            }}
-          />
-        ))}
-      </div>
-    </>
+    <div
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      aria-hidden="true"
+    >
+      {BANDS.map((band, i) => (
+        <div
+          key={i}
+          data-aurora-band
+          className="aurora-band absolute left-[-10%] w-[120%] rounded-[50%]"
+          style={{
+            height: band.height,
+            top: band.top,
+            background: band.gradient,
+            filter: `blur(${band.blur})`,
+            animation: `aurora-drift ${band.duration} ease-in-out ${band.delay} infinite ${band.direction}`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
+
