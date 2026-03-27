@@ -100,8 +100,7 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
             />
             <div>
               <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
-                {count} {count === 1 ? "item" : "items"} added under &ldquo;
-                {sourceLabel}&rdquo;
+                {`${count} ${count === 1 ? "item" : "items"} added under \u201c${sourceLabel}\u201d`}
               </p>
               <p className="mt-0.5 text-[11px] text-[var(--color-text-tertiary)]">
                 Parsed and ready for analysis
