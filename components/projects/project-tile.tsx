@@ -1,4 +1,3 @@
-// components/projects/project-tile.tsx
 "use client";
 
 import Link from "next/link";
@@ -26,7 +25,11 @@ export function ProjectTile({ id, name, createdAt, index }: ProjectTileProps) {
     <BlurFade delay={index * 0.04} duration={0.28}>
       <Link href={`/projects/${id}`} className="block h-full">
         <MagicCard
-          className="flex h-full flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-6 shadow-[var(--shadow-2)] backdrop-blur-[20px] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]"
+          className="flex h-full flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-6 shadow-[var(--shadow-2)] backdrop-blur-[20px] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]"
+          // REMOVED from className:
+          // hover:-translate-y-0.5
+          // hover:scale-[1.02]
+          // These were conflicting with the root motion.div transform in MagicCard.
           gradientColor="hsla(220,55%,55%,0.10)"
         >
           {/* Color-coded icon block */}

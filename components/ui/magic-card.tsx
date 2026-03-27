@@ -158,6 +158,18 @@ export function MagicCard(props: MagicCardProps) {
 
   return (
     <motion.div
+      // ADDED: move hover transform into Framer Motion so it doesn't conflict
+      // with Tailwind transform utilities like hover:scale / hover:-translate-y.
+      whileHover={{
+        scale: 1.015,
+        y: -2,
+      }}
+      // ADDED: slower, smoother hover transition.
+      transition={{
+        type: "tween",
+        duration: 0.5,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       className={cn(
         "group relative isolate overflow-hidden rounded-[inherit] border border-transparent",
         className
@@ -210,12 +222,12 @@ export function MagicCard(props: MagicCardProps) {
             filter: `blur(${glowBlur}px)`,
             opacity: orbVisible,
             background: `linear-gradient(${glowAngle}deg, ${glowFrom}, ${glowTo})`,
-
             mixBlendMode: isDarkTheme ? "screen" : "multiply",
             willChange: "transform, opacity",
           }}
         />
       )}
+
       <div className="relative z-40">{children}</div>
     </motion.div>
   )
