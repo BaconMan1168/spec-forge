@@ -35,4 +35,17 @@ describe("StepTypeSelect", () => {
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     expect(onNext).toHaveBeenCalledTimes(1);
   });
+
+  it("method card buttons have cursor-pointer class", () => {
+    render(
+      <StepTypeSelect value={null} onChange={vi.fn()} onNext={vi.fn()} />
+    );
+    const buttons = screen.getAllByRole("button").filter(
+      (b) => b.textContent?.includes("Upload files") || b.textContent?.includes("Paste text")
+    );
+    expect(buttons.length).toBe(2);
+    buttons.forEach((btn) => {
+      expect(btn.className).toContain("cursor-pointer");
+    });
+  });
 });

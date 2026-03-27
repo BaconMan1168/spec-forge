@@ -42,7 +42,7 @@ export function StepTypeSelect({ value, onChange, onNext }: StepTypeSelectProps)
                 type="button"
                 onClick={() => onChange(id)}
                 className={[
-                  "flex flex-col items-center gap-2 rounded-[var(--radius-md)] border px-3 py-5 transition-all",
+                  "flex flex-col cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border px-3 py-5 transition-all",
                   selected
                     ? "border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10"
                     : "border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-surface-2)]",
