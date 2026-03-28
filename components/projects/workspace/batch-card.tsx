@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { FeedbackFile } from "@/lib/types/database";
-import { Trash2, FileText, Clipboard, Copy } from "lucide-react";
+import { Trash2, FileText, Clipboard, Copy, Download } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export type BatchGroup = {
   sourceLabel: string;
@@ -19,6 +20,53 @@ function formatRelativeTime(dateStr: string): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function ActionBtn({
+  label,
+  onClick,
+  disabled,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="group/tip relative">
+      <button
+        aria-label={label}
+        disabled={disabled}
+        onClick={onClick}
+        className={[
+          "cursor-pointer flex items-center justify-center rounded-md p-1",
+          "text-[var(--color-text-tertiary)] transition-colors",
+          danger
+            ? "hover:text-[var(--color-error)]"
+            : "hover:text-[var(--color-text-primary)]",
+          "disabled:pointer-events-none disabled:opacity-50",
+        ].join(" ")}
+      >
+        {children}
+      </button>
+      <span
+        className={[
+          "pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2",
+          "whitespace-nowrap rounded px-1.5 py-0.5",
+          "text-[10px] font-medium leading-none",
+          "bg-[var(--color-surface-2)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)]",
+          "opacity-0 scale-95",
+          "transition-[opacity,transform] duration-150 ease-out",
+          "group-hover/tip:opacity-100 group-hover/tip:scale-100",
+        ].join(" ")}
+      >
+        {label}
+      </span>
+    </div>
+  );
 }
 
 interface BatchCardProps {
@@ -45,8 +93,31 @@ export function BatchCard({ batch, onDelete, isDeleting, projectId }: BatchCardP
     navigator.clipboard.writeText(text);
   };
 
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const supabase = createClient();
+    for (const file of batch.files) {
+      if (!file.storage_url) continue;
+      const { data, error } = await supabase.storage
+        .from("feedback-uploads")
+        .createSignedUrl(file.storage_url, 60);
+      if (error || !data?.signedUrl) continue;
+      const response = await fetch(data.signedUrl);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = file.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
   const cardClass =
-    "flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 flex-shrink-0 transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]";
+    "cursor-pointer flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 flex-shrink-0 shadow-[var(--shadow-2)] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]";
 
   const inner = (
     <>
@@ -69,29 +140,30 @@ export function BatchCard({ batch, onDelete, isDeleting, projectId }: BatchCardP
         {batch.badge}
       </span>
       {isPaste && (
-        <button
-          aria-label="Copy text"
-          onClick={handleCopy}
-          className="cursor-pointer flex items-center justify-center rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
-        >
+        <ActionBtn label="Copy text" onClick={handleCopy}>
           <Copy size={14} strokeWidth={1.7} />
-        </button>
+        </ActionBtn>
       )}
-      <button
-        aria-label="Delete batch"
-        disabled={isDeleting}
+      {!isPaste && (
+        <ActionBtn label="Download" onClick={handleDownload}>
+          <Download size={14} strokeWidth={1.7} />
+        </ActionBtn>
+      )}
+      <ActionBtn
+        label="Delete"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-        className="cursor-pointer flex items-center justify-center rounded-md p-1 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-error)] disabled:pointer-events-none disabled:opacity-50"
+        disabled={isDeleting}
+        danger
       >
         <Trash2 size={14} strokeWidth={1.7} />
-      </button>
+      </ActionBtn>
     </>
   );
 
   if (isPaste) {
     const href = `/projects/${projectId}/inputs/${encodeURIComponent(batch.sourceLabel)}`;
     return (
-      <Link href={href} className={`${cardClass} cursor-pointer`}>
+      <Link href={href} className={cardClass}>
         {inner}
       </Link>
     );
