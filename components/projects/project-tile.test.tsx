@@ -54,9 +54,9 @@ describe("ProjectTile", () => {
     expect(icon).not.toBeNull();
   });
 
-  it("has fluid hover transition (320ms duration)", () => {
+  it("has fluid hover transition (500ms duration)", () => {
     const { container } = render(<ProjectTile {...baseProps} />);
     const card = container.querySelector("[class*='duration-']");
-    expect(card?.className).toMatch(/duration-\[320ms\]/);
+    expect(card?.className).toMatch(/duration-\[500ms\]/);
   });
 });

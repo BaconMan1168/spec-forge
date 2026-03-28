@@ -14,6 +14,8 @@
   - analogous → scales & harmony
 - Soft depth (glass + subtle shadows)
 - No arbitrary values — everything derives from tokens below
+- Slow, smooth, and fluid animations
+- ALWAYS use the frontend design plugin
 
 
 # =========================================================
@@ -280,6 +282,16 @@ hover-bg: error / 20
 ALL buttons must use `cursor: pointer` on hover.
 Never use `cursor: default` on interactive elements.
 
+### Interactive Elements
+
+ALL clickable non-button elements must also use `cursor: pointer`:
+- Cards acting as clickable surfaces
+- Icon-only buttons and icon wrappers
+- Clickable list rows and batch cards
+- Any `<div>` or `<span>` with an `onClick` handler
+
+Never use `cursor: default` on any interactive element.
+
 ### Hover Animation
 
 All buttons:
@@ -288,9 +300,6 @@ All buttons:
 - duration: fast (120ms)
 - easing: cubic-bezier(0.22, 1, 0.36, 1)
 
-Primary buttons additionally:
-- shimmer sweep: semi-transparent white gradient (via-white/20) translates from left to right on hover
-- sweep duration: 500ms ease-out
 
 ### Press / Click Animation
 
