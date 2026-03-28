@@ -27,6 +27,8 @@ The AI system receives normalized plain text derived from:
 - `.txt` uploads
 - `.pdf` uploads
 - `.docx` uploads
+- `.json` uploads
+- `.md` uploads
 - pasted text
 
 Each input must also include:
