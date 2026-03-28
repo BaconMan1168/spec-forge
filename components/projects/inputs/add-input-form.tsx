@@ -36,6 +36,7 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
   const [sourceLabel, setSourceLabel] = useState("");
   const [sourceLabelError, setSourceLabelError] = useState<string | null>(null);
   const [submitResult, setSubmitResult] = useState<UploadResult | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const goToStep2 = () => {
@@ -57,6 +58,7 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
     setSourceLabel("");
     setSourceLabelError(null);
     setSubmitResult(null);
+    setServerError(null);
   };
 
   const handleSubmit = () => {
@@ -67,21 +69,26 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
     }
     setSourceLabelError(null);
 
+    setServerError(null);
     startTransition(async () => {
-      if (selectedType === "paste") {
-        const record = await pasteFeedbackText({
-          projectId,
-          sourceType: sourceLabel,
-          content: pasteContent,
-        });
-        setSubmitResult({ succeeded: [record], failed: [] });
-      } else {
-        const formData = new FormData();
-        formData.append("project_id", projectId);
-        formData.append("source_type", sourceLabel);
-        files.forEach((f) => formData.append("files", f));
-        const result = await uploadFeedbackFiles(formData);
-        setSubmitResult(result);
+      try {
+        if (selectedType === "paste") {
+          const record = await pasteFeedbackText({
+            projectId,
+            sourceType: sourceLabel,
+            content: pasteContent,
+          });
+          setSubmitResult({ succeeded: [record], failed: [] });
+        } else {
+          const formData = new FormData();
+          formData.append("project_id", projectId);
+          formData.append("source_type", sourceLabel);
+          files.forEach((f) => formData.append("files", f));
+          const result = await uploadFeedbackFiles(formData);
+          setSubmitResult(result);
+        }
+      } catch (err) {
+        setServerError(err instanceof Error ? err.message : "Upload failed — please try again");
       }
     });
   };
@@ -160,6 +167,13 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
           ))}
         </div>
       </div>
+
+      {/* Server error banner — shown when the server action throws */}
+      {serverError && (
+        <div className="mx-5 mb-0 mt-3 rounded-[var(--radius-sm)] border border-[var(--color-error)]/20 bg-[var(--color-error)]/8 px-3 py-2">
+          <p className="text-[12px] text-[var(--color-error)]">{serverError}</p>
+        </div>
+      )}
 
       {/* Step content */}
       <div className="overflow-hidden px-5 pb-5 pt-4">

@@ -27,14 +27,12 @@ export async function parseFileToText(
 ): Promise<string> {
   const ext = fileName?.split(".").pop()?.toLowerCase();
 
-  // PDF
+  // PDF — use unpdf (serverless PDF.js build, no worker needed in Node/edge)
   if (mimeType === "application/pdf" || ext === "pdf") {
-    // pdf-parse ships as CJS; dynamic import gives us the module object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfModule = (await import("pdf-parse")) as any;
-    const pdfParse = pdfModule.default ?? pdfModule;
-    const result = await pdfParse(buffer);
-    return result.text.trim();
+    const { getDocumentProxy, extractText } = await import("unpdf");
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text } = await extractText(pdf, { mergePages: true });
+    return (text as string).trim();
   }
 
   // DOCX

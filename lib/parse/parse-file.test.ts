@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { parseFileToText, SUPPORTED_MIME_TYPES } from "./parse-file";
 
-vi.mock("pdf-parse", () => ({
-  default: vi.fn().mockResolvedValue({ text: "parsed pdf content" }),
+vi.mock("unpdf", () => ({
+  getDocumentProxy: vi.fn().mockResolvedValue({}),
+  extractText: vi
+    .fn()
+    .mockResolvedValue({ totalPages: 1, text: "parsed pdf content" }),
 }));
 
 vi.mock("mammoth", () => ({
