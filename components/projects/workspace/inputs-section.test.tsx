@@ -53,4 +53,28 @@ describe("InputsSection", () => {
     render(<InputsSection files={[]} projectId="p1" />);
     expect(screen.getByText(/no inputs yet/i)).toBeInTheDocument();
   });
+
+  it("shows 'Not included in analysis' group when some files are newer than lastAnalyzedAt", () => {
+    const oldFile = { ...makeFile("f1", "Interview"), created_at: "2026-01-01T00:00:00Z" };
+    const newFile = { ...makeFile("f2", "Survey"), created_at: "2026-03-01T00:00:00Z" };
+    render(
+      <InputsSection
+        files={[oldFile, newFile]}
+        projectId="p1"
+        lastAnalyzedAt="2026-02-01T00:00:00Z"
+      />
+    );
+    expect(screen.getByText(/not included/i)).toBeInTheDocument();
+  });
+
+  it("does not show staleness group when lastAnalyzedAt is null", () => {
+    render(
+      <InputsSection
+        files={[makeFile("f1", "Interview")]}
+        projectId="p1"
+        lastAnalyzedAt={null}
+      />
+    );
+    expect(screen.queryByText(/not included/i)).not.toBeInTheDocument();
+  });
 });
