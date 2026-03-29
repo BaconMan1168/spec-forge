@@ -9,9 +9,10 @@ interface AnalyzeButtonProps {
   projectId: string;
   hasInputs: boolean;
   isStale: boolean;
+  onAnalyzingChange?: (isAnalyzing: boolean) => void;
 }
 
-export function AnalyzeButton({ projectId, hasInputs, isStale }: AnalyzeButtonProps) {
+export function AnalyzeButton({ projectId, hasInputs, isStale, onAnalyzingChange }: AnalyzeButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function AnalyzeButton({ projectId, hasInputs, isStale }: AnalyzeButtonPr
 
   async function handleClick() {
     setLoading(true);
+    onAnalyzingChange?.(true);
     setError(null);
     try {
       const res = await fetch(`/api/projects/${projectId}/analyze`, { method: "POST" });
@@ -33,6 +35,7 @@ export function AnalyzeButton({ projectId, hasInputs, isStale }: AnalyzeButtonPr
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
+      onAnalyzingChange?.(false);
     }
   }
 

@@ -36,7 +36,7 @@ export function ThemesSection({ insights, isStale }: ThemesSectionProps) {
         {insights.map((insight, i) => (
           <div
             key={insight.id}
-            className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-5 shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.01] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]"
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-5 shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]"
           >
             <div className="mb-3 flex items-center gap-3">
               <span className="flex-1 text-[14px] font-semibold text-[var(--color-text-primary)]">

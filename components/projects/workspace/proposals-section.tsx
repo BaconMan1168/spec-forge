@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, Info } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import type { Proposal } from "@/lib/types/database";
 
 interface ProposalsSectionProps {
@@ -25,6 +26,43 @@ function PropSection({ label, children }: SectionProps) {
   );
 }
 
+function generateMarkdown(proposal: Proposal): string {
+  const lines: string[] = [];
+  lines.push(`# ${proposal.feature_name}`);
+  lines.push("");
+  lines.push(`## Problem Statement`);
+  lines.push(proposal.problem_statement);
+  lines.push("");
+  if (proposal.evidence.length > 0) {
+    lines.push(`## User Evidence`);
+    for (const e of proposal.evidence) {
+      lines.push(`- "${e.quote}" — ${e.sourceLabel}`);
+    }
+    lines.push("");
+  }
+  if (proposal.ui_changes.length > 0) {
+    lines.push(`## Suggested UI Changes`);
+    for (const item of proposal.ui_changes) lines.push(`- ${item}`);
+    lines.push("");
+  }
+  if (proposal.data_model_changes.length > 0) {
+    lines.push(`## Suggested Data Model Changes`);
+    for (const item of proposal.data_model_changes) lines.push(`- ${item}`);
+    lines.push("");
+  }
+  if (proposal.workflow_changes.length > 0) {
+    lines.push(`## Suggested Workflow Changes`);
+    for (const item of proposal.workflow_changes) lines.push(`- ${item}`);
+    lines.push("");
+  }
+  if (proposal.engineering_tasks.length > 0) {
+    lines.push(`## Engineering Tasks`);
+    for (const item of proposal.engineering_tasks) lines.push(`- ${item}`);
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
 interface ProposalCardProps {
   proposal: Proposal;
   index: number;
@@ -34,7 +72,7 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.005] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
+    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
       <button
         className="flex w-full cursor-pointer items-center gap-3 px-6 py-5 text-left"
         onClick={() => setOpen((o) => !o)}
@@ -52,106 +90,125 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
         />
       </button>
 
-      {open && (
-        <div className="px-6 pb-6">
-          <div className="mb-5 h-px bg-[var(--color-border-subtle)]" />
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="px-6 pb-6">
+              <div className="mb-5 h-px bg-[var(--color-border-subtle)]" />
 
-          <PropSection label="Problem Statement">
-            <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
-              {proposal.problem_statement}
-            </p>
-          </PropSection>
+              <PropSection label="Problem Statement">
+                <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+                  {proposal.problem_statement}
+                </p>
+              </PropSection>
 
-          {proposal.evidence.length > 0 && (
-            <PropSection label="User Evidence">
-              <div className="flex flex-col gap-2">
-                {proposal.evidence.map((e, i) => (
-                  <div
-                    key={i}
-                    className="rounded-r-[var(--radius-sm)] border-l-2 border-[var(--color-border-strong)] bg-[var(--color-bg-1)] px-3 py-2"
-                  >
-                    <p className="text-[12px] italic leading-relaxed text-[var(--color-text-tertiary)]">
-                      &ldquo;{e.quote}&rdquo;
-                    </p>
-                    <p className="mt-1 text-[11px] text-[var(--color-text-disabled)]">— {e.sourceLabel}</p>
+              {proposal.evidence.length > 0 && (
+                <PropSection label="User Evidence">
+                  <div className="flex flex-col gap-2">
+                    {proposal.evidence.map((e, i) => (
+                      <div
+                        key={i}
+                        className="rounded-r-[var(--radius-sm)] border-l-2 border-[var(--color-border-strong)] bg-[var(--color-bg-1)] px-3 py-2"
+                      >
+                        <p className="text-[12px] italic leading-relaxed text-[var(--color-text-tertiary)]">
+                          &ldquo;{e.quote}&rdquo;
+                        </p>
+                        <p className="mt-1 text-[11px] text-[var(--color-text-disabled)]">— {e.sourceLabel}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </PropSection>
+              )}
+
+              {proposal.ui_changes.length > 0 && (
+                <PropSection label="Suggested UI Changes">
+                  <ul className="flex flex-col gap-1.5">
+                    {proposal.ui_changes.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
+                        <span className="mt-0.5 shrink-0 text-[var(--color-text-disabled)]">–</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </PropSection>
+              )}
+
+              {proposal.data_model_changes.length > 0 && (
+                <PropSection label="Suggested Data Model Changes">
+                  <ul className="flex flex-col gap-1.5">
+                    {proposal.data_model_changes.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
+                        <span className="mt-0.5 shrink-0 text-[var(--color-text-disabled)]">–</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </PropSection>
+              )}
+
+              {proposal.workflow_changes.length > 0 && (
+                <PropSection label="Suggested Workflow Changes">
+                  <ol className="flex flex-col gap-1.5">
+                    {proposal.workflow_changes.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] text-[10px] font-semibold text-[var(--color-text-tertiary)]">
+                          {i + 1}
+                        </span>
+                        {item}
+                      </li>
+                    ))}
+                  </ol>
+                </PropSection>
+              )}
+
+              {proposal.engineering_tasks.length > 0 && (
+                <PropSection label="Engineering Tasks">
+                  <ol className="flex flex-col gap-1.5">
+                    {proposal.engineering_tasks.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] text-[10px] font-semibold text-[var(--color-text-tertiary)]">
+                          {i + 1}
+                        </span>
+                        {item}
+                      </li>
+                    ))}
+                  </ol>
+                </PropSection>
+              )}
+
+              <div className="mt-5 flex gap-2 border-t border-[var(--color-border-subtle)] pt-4">
+                <button
+                  onClick={() => navigator.clipboard.writeText(generateMarkdown(proposal))}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+                >
+                  Copy Markdown
+                </button>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([generateMarkdown(proposal)], { type: "text/markdown" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${proposal.feature_name.toLowerCase().replace(/\s+/g, "-")}.md`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+                >
+                  Download .md
+                </button>
               </div>
-            </PropSection>
-          )}
-
-          {proposal.ui_changes.length > 0 && (
-            <PropSection label="Suggested UI Changes">
-              <ul className="flex flex-col gap-1.5">
-                {proposal.ui_changes.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
-                    <span className="mt-0.5 shrink-0 text-[var(--color-text-disabled)]">–</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </PropSection>
-          )}
-
-          {proposal.data_model_changes.length > 0 && (
-            <PropSection label="Suggested Data Model Changes">
-              <ul className="flex flex-col gap-1.5">
-                {proposal.data_model_changes.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
-                    <span className="mt-0.5 shrink-0 text-[var(--color-text-disabled)]">–</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </PropSection>
-          )}
-
-          {proposal.workflow_changes.length > 0 && (
-            <PropSection label="Suggested Workflow Changes">
-              <ol className="flex flex-col gap-1.5">
-                {proposal.workflow_changes.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] text-[10px] font-semibold text-[var(--color-text-tertiary)]">
-                      {i + 1}
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ol>
-            </PropSection>
-          )}
-
-          {proposal.engineering_tasks.length > 0 && (
-            <PropSection label="Engineering Tasks">
-              <ol className="flex flex-col gap-1.5">
-                {proposal.engineering_tasks.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] text-[10px] font-semibold text-[var(--color-text-tertiary)]">
-                      {i + 1}
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ol>
-            </PropSection>
-          )}
-
-          <div className="mt-5 flex gap-2 border-t border-[var(--color-border-subtle)] pt-4">
-            <button
-              disabled
-              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] opacity-50"
-            >
-              Copy Markdown
-            </button>
-            <button
-              disabled
-              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] opacity-50"
-            >
-              Download .md
-            </button>
-          </div>
-        </div>
-      )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

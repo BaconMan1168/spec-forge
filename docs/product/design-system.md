@@ -470,6 +470,42 @@ className="... transition-[transform,box-shadow,border-color] duration-[320ms] [
 - Spring physics on hover (§8.6)
 
 
+## 8.8 Interaction Animation Standards (MANDATORY)
+
+All interactive elements MUST follow these animation rules. There are NO exceptions.
+
+### Modal / Overlay Entrances
+- Backdrop: opacity 0 → 1, duration 180ms, ease-out
+- Panel: opacity 0 → 1, scale 0.96 → 1, translateY 12px → 0, duration 280ms, ease cubic-bezier(0.22,1,0.36,1)
+- Exit: reverse of entrance, same durations
+- Implementation: `motion/react` `AnimatePresence` + `motion.div` with `initial`/`animate`/`exit` props
+
+### Collapsible / Accordion Sections
+- Height: 0 → auto (animate height, not max-height)
+- Opacity: 0 → 1
+- Duration: 280ms, ease cubic-bezier(0.22,1,0.36,1)
+- `initial={false}` on AnimatePresence to suppress mount animation
+- Implementation: `motion/react` `AnimatePresence` + `motion.div` with `overflow: hidden`
+
+### Loading / Skeleton States
+- When an async operation is in progress, ALL affected content areas must show pulse skeletons
+- Never leave real content visible during an operation that will replace it
+- Pulse animation: CSS `animate-pulse` (Tailwind utility)
+- Skeleton elements mirror the shape of the real content they replace
+
+### Card Hover (re-stated for emphasis)
+- MUST use 320ms duration — never below 250ms
+- MUST transition transform + box-shadow + border-color simultaneously
+- Use Tailwind: `transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]`
+- scale: 1.02, translateY: -2px, shadow: shadow-3, border: border-strong
+
+### Forbidden Shortcuts
+- `transition-all` — causes layout repaints, forbidden
+- Instant show/hide with `display: none` — always animate visibility
+- `duration` under 200ms for any modal or collapsible — feels mechanical
+- Spring physics (`type: "spring"`) — forbidden per §8.6
+
+
 # =========================================================
 # 9. Images & Iconography
 # =========================================================
