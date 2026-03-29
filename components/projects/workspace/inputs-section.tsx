@@ -105,7 +105,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
           </p>
         ) : (
           <div
-            className="flex flex-col gap-2 overflow-y-auto py-1 px-1"
+            className="flex flex-col gap-2 overflow-y-auto py-1 px-2"
             style={{
               maxHeight: "212px",
               maskImage:
@@ -139,7 +139,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
         </p>
       ) : (
         <div
-          className="flex flex-col gap-2 overflow-y-auto py-1 px-1"
+          className="flex flex-col gap-2 overflow-y-auto py-1 px-2"
           style={{
             maxHeight: "260px",
             maskImage:
