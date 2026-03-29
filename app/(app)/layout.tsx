@@ -1,10 +1,10 @@
 // app/(app)/layout.tsx
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { Particles } from "@/components/ui/particles";
 import { PageTransition } from "@/components/ui/page-transition";
+import { Navbar } from "@/components/nav/navbar";
 
 export default async function AppLayout({
   children,
@@ -39,14 +39,7 @@ export default async function AppLayout({
 
       {/* App shell */}
       <div className="relative z-10">
-        <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-1)]/80 backdrop-blur-[20px]">
-          <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
-            <span className="font-semibold text-[var(--color-text-primary)]">
-              SpecForge
-            </span>
-            <SignOutButton />
-          </div>
-        </header>
+        <Navbar userEmail={user.email ?? ""} />
         <main className="mx-auto max-w-[1200px] px-6 py-8">
           <PageTransition>{children}</PageTransition>
         </main>

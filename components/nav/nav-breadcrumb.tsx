@@ -10,7 +10,9 @@ import { createClient } from "@/lib/supabase/client";
 export function NavBreadcrumb() {
   const pathname = usePathname();
   const params = useParams();
-  const [projectName, setProjectName] = useState<string | null>(null);
+  // Store { id, name } together so the name is only shown when it matches the
+  // current projectId — avoids a synchronous setState(null) in the effect body.
+  const [resolved, setResolved] = useState<{ id: string; name: string } | null>(null);
 
   const projectId =
     typeof params?.id === "string" ? params.id : null;
@@ -18,7 +20,6 @@ export function NavBreadcrumb() {
 
   useEffect(() => {
     if (!projectId) return;
-    setProjectName(null);
     const supabase = createClient();
     supabase
       .from("projects")
@@ -26,9 +27,12 @@ export function NavBreadcrumb() {
       .eq("id", projectId)
       .single()
       .then(({ data }) => {
-        if (data) setProjectName(data.name);
+        if (data) setResolved({ id: projectId, name: data.name });
       });
   }, [projectId]);
+
+  // Only use the resolved name when it corresponds to the current project
+  const projectName = resolved?.id === projectId ? resolved.name : null;
 
   if (!isProjectPage) return null;
 
