@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Info } from "lucide-react";
 import type { Insight } from "@/lib/types/database";
 import { QuotesModal } from "./quotes-modal";
+import { MagicCard } from "@/components/ui/magic-card";
 
 const FREQ_STYLES = [
   "bg-[hsl(200_55%_18%)] text-[var(--color-analog-1)] border border-[hsl(200_55%_28%)]",
@@ -34,9 +35,10 @@ export function ThemesSection({ insights, isStale }: ThemesSectionProps) {
 
       <div className="flex flex-col gap-2.5">
         {insights.map((insight, i) => (
-          <div
+          <MagicCard
             key={insight.id}
-            className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-5 shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]"
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-5 shadow-[var(--shadow-2)] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]"
+            gradientColor="hsla(220,55%,55%,0.10)"
           >
             <div className="mb-3 flex items-center gap-3">
               <span className="flex-1 text-[14px] font-semibold text-[var(--color-text-primary)]">
@@ -78,7 +80,7 @@ export function ThemesSection({ insights, isStale }: ThemesSectionProps) {
                 View all {insight.quotes.length} quotes
               </button>
             )}
-          </div>
+          </MagicCard>
         ))}
       </div>
 
