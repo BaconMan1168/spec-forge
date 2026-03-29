@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { MagicCard } from "@/components/ui/magic-card";
 import type { Proposal } from "@/lib/types/database";
 
 interface ProposalsSectionProps {
@@ -72,7 +73,10 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] shadow-[var(--shadow-2)] transition-[transform,box-shadow,border-color] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
+    <MagicCard
+      className="rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] shadow-[var(--shadow-2)] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]"
+      gradientColor="hsla(220,55%,55%,0.10)"
+    >
       <button
         className="flex w-full cursor-pointer items-center gap-3 px-6 py-5 text-left"
         onClick={() => setOpen((o) => !o)}
@@ -209,7 +213,7 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </MagicCard>
   );
 }
 

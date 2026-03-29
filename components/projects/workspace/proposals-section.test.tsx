@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ theme: "dark", systemTheme: "dark" }),
+}));
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ProposalsSection } from "./proposals-section";
 import type { Proposal } from "@/lib/types/database";
