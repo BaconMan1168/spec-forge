@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { FeedbackFile } from "@/lib/types/database";
 import { Trash2, FileText, Clipboard, Copy, Download } from "lucide-react";
+import { MagicCard } from "@/components/ui/magic-card";
 import { createClient } from "@/lib/supabase/client";
 
 export type BatchGroup = {
@@ -116,8 +117,8 @@ export function BatchCard({ batch, onDelete, isDeleting, projectId }: BatchCardP
     }
   };
 
-  const cardClass =
-    "cursor-pointer flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 flex-shrink-0 shadow-[var(--shadow-2)] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[var(--shadow-3)] hover:border-[var(--color-border-strong)]";
+  const magicCardClass =
+    "rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] flex-shrink-0 shadow-[var(--shadow-2)] transition-[box-shadow,border-color] duration-[500ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]";
 
   const inner = (
     <>
@@ -160,14 +161,22 @@ export function BatchCard({ batch, onDelete, isDeleting, projectId }: BatchCardP
     </>
   );
 
+  const cardContent = (
+    <MagicCard className={magicCardClass} gradientColor="hsla(220,55%,55%,0.10)">
+      <div className="flex items-center gap-3 px-4 py-3.5">
+        {inner}
+      </div>
+    </MagicCard>
+  );
+
   if (isPaste) {
     const href = `/projects/${projectId}/inputs/${encodeURIComponent(batch.sourceLabel)}`;
     return (
-      <Link href={href} className={cardClass}>
-        {inner}
+      <Link href={href} className="cursor-pointer block">
+        {cardContent}
       </Link>
     );
   }
 
-  return <div className={cardClass}>{inner}</div>;
+  return <div className="cursor-pointer">{cardContent}</div>;
 }

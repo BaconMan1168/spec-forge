@@ -14,6 +14,11 @@ vi.mock("motion/react", () => ({
       transition: _t,
       custom: _c,
       variants: _v,
+      whileHover: _wh,
+      style: _s,
+      onPointerMove: _opm,
+      onPointerLeave: _opl,
+      onPointerEnter: _ope,
       ...rest
     }: React.HTMLAttributes<HTMLDivElement> & {
       initial?: unknown;
@@ -22,9 +27,21 @@ vi.mock("motion/react", () => ({
       transition?: unknown;
       custom?: unknown;
       variants?: unknown;
+      whileHover?: unknown;
+      style?: unknown;
+      onPointerMove?: unknown;
+      onPointerLeave?: unknown;
+      onPointerEnter?: unknown;
     }) => <div className={className} {...rest}>{children}</div>,
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useMotionValue: (_initial: unknown) => ({ set: vi.fn(), get: vi.fn() }),
+  useMotionTemplate: (..._args: unknown[]) => "",
+  useSpring: (_v: unknown, _opts?: unknown) => ({ set: vi.fn(), get: vi.fn() }),
+}));
+
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ theme: "dark", systemTheme: "dark" }),
 }));
 
 vi.mock("next/link", () => ({
