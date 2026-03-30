@@ -1,4 +1,3 @@
-// components/nav/nav-breadcrumb.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -37,7 +36,10 @@ export function NavBreadcrumb() {
   if (!isProjectPage) return null;
 
   return (
-    <>
+    // FIX: single shrinkable breadcrumb root so nested flex children get a real
+    // width constraint; without this, the project name can expand instead of
+    // overflowing, which prevents text ellipsis from appearing.
+    <div className="flex min-w-0 flex-1 items-center overflow-hidden">
       <div
         data-testid="nav-divider"
         className="h-[18px] w-px flex-shrink-0 bg-[var(--color-border-subtle)]"
@@ -65,9 +67,9 @@ export function NavBreadcrumb() {
           /
         </span>
 
-        {/* Project name — truncates with ellipsis */}
+        {/* Project name — explicitly bounded so ellipsis can apply */}
         {projectName !== null ? (
-          <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-medium text-[var(--color-text-primary)]">
+          <span className="flex-1 min-w-0 max-w-[30%] overflow-hidden whitespace-nowrap text-ellipsis text-[14px] font-medium text-[var(--color-text-primary)]">
             {projectName}
           </span>
         ) : (
@@ -77,6 +79,6 @@ export function NavBreadcrumb() {
           />
         )}
       </div>
-    </>
+    </div>
   );
 }

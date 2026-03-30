@@ -1,4 +1,3 @@
-// components/nav/navbar.tsx
 import Link from "next/link";
 import { SpecForgeLogo } from "./spec-forge-logo";
 import { NavBreadcrumb } from "./nav-breadcrumb";
