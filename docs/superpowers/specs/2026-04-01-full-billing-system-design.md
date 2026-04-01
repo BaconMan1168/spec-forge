@@ -47,10 +47,11 @@ create table public.exports (
   user_id     uuid not null references auth.users(id) on delete cascade,
   project_id  uuid not null references public.projects(id) on delete cascade,
   proposal_id uuid not null references public.proposals(id) on delete cascade,
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+  unique (project_id, proposal_id)
 );
 ```
-Tracks each export action per proposal per project. Enables the 3-export-per-project Free cap.
+Tracks distinct proposals exported per project. The unique constraint on `(project_id, proposal_id)` means re-exporting an already-exported proposal is a no-op (upsert on conflict do nothing). The Free cap of 3 is measured as `count(distinct proposal_id) where project_id = X`.
 
 **Migration:** `supabase/migrations/005_add_exports.sql`
 
@@ -92,7 +93,7 @@ Each function:
 **Add limit checks to existing server actions and routes:**
 - `app/actions/projects.ts` (`createProject`) — call `canCreateProject()` before insert; throw a readable error if denied (server actions use thrown errors, not HTTP status codes)
 - `app/actions/feedback-files.ts` (`uploadFeedbackFiles`) — call `canAddFile()` before inserting files
-- `app/actions/exports.ts` (`exportProposal`) — new server action; call `canExport()`, insert into `exports` table, return markdown string to client. Replaces the current pure client-side `Blob` download in `proposals-section.tsx`
+- `app/actions/exports.ts` (`exportProposal`) — new server action; call `canExport()`, upsert into `exports` table (on conflict do nothing), return markdown string to client. Both "Copy Markdown" and "Download .md" call this same action. Replaces the current pure client-side `Blob` download in `proposals-section.tsx`
 - `app/api/projects/[id]/analyze/route.ts` — call `canRerunAnalysis()` before triggering re-run (first run always allowed; re-run = running again when analysis already exists)
 
 **New: `POST /api/billing/portal`**
@@ -135,6 +136,12 @@ When a user has hit a plan limit, the relevant action button is:
 | Re-run analysis | Re-run button on project page |
 
 The tooltip component is a shared `<PlanLimitTooltip>` wrapper that accepts `allowed`, `reason`, and `children`. When `allowed` is false it renders the child as disabled and overlays the tooltip. When `allowed` is true it renders the child normally.
+
+**Export-specific gating in `ProposalCard`:**
+- "Copy Markdown" and "Download .md" both call `exportProposal(projectId, proposalId)` server action
+- `canExport` function signature: `canExport(userId, projectId, proposalId)` — returns `allowed: true` if the proposal is already exported (re-export is free) OR if fewer than 3 distinct proposals have been exported from this project
+- When a proposal card is beyond the limit (and not yet exported), both buttons are disabled with a `<PlanLimitTooltip>`
+- The expanded card body also gets `select-none` (CSS `user-select: none`) as a soft deterrent against manual copy-paste for ungated proposals
 
 **Limit data is fetched server-side** and passed as props to the relevant page components, so no client-side loading state is needed.
 
