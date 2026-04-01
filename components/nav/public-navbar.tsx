@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { SpecForgeLogo } from "@/components/nav/spec-forge-logo";
 
@@ -11,8 +12,16 @@ const NAV_LINKS = [
   { name: "Pricing", href: "/pricing" },
 ];
 
+const SLIDE_TRANSITION = { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const };
+const TUBE_TRANSITION = { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const };
+
 export function PublicNavbar() {
   const pathname = usePathname();
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
+  // The bg pill lives on the active nav link at rest; slides to wherever is hovered
+  const activeNavItem = NAV_LINKS.find((l) => l.href === pathname)?.href ?? null;
+  const bgTarget = hoveredItem ?? activeNavItem;
 
   return (
     <div className="pointer-events-none fixed left-0 right-0 top-0 z-[200] flex justify-center pt-6">
@@ -43,25 +52,37 @@ export function PublicNavbar() {
             <Link
               key={link.href}
               href={link.href}
+              onMouseEnter={() => setHoveredItem(link.href)}
+              onMouseLeave={() => setHoveredItem(null)}
               className={cn(
                 "relative rounded-[var(--radius-pill)] px-5 py-2 text-sm font-medium transition-colors duration-[180ms]",
                 isActive
-                  ? "bg-[var(--color-surface-0)] text-[var(--color-accent-primary)]"
-                  : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-0)] hover:text-[var(--color-text-primary)]"
+                  ? "text-[var(--color-accent-primary)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               )}
             >
-              {/* Tube light */}
+              {/* Sliding background pill */}
+              {bgTarget === link.href && (
+                <motion.span
+                  layoutId="nav-bg"
+                  className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
+                  transition={SLIDE_TRANSITION}
+                />
+              )}
+              {/* Tube light — slides between active nav links */}
               {isActive && (
-                <span
+                <motion.span
+                  layoutId="tube-light"
                   aria-hidden="true"
                   className="absolute left-1/2 top-[-3px] h-1 w-8 -translate-x-1/2 rounded-b-sm bg-[var(--color-accent-primary)]"
+                  transition={TUBE_TRANSITION}
                   style={{
                     boxShadow:
                       "0 0 12px 4px hsla(40,85%,58%,0.5), 0 12px 28px 2px hsla(40,85%,58%,0.15)",
                   }}
                 />
               )}
-              {link.name}
+              <span className="relative z-10">{link.name}</span>
             </Link>
           );
         })}
@@ -71,12 +92,21 @@ export function PublicNavbar() {
           className="mx-1 h-[18px] w-px flex-shrink-0 bg-[var(--color-border-subtle)]"
         />
 
-        {/* Sign In */}
+        {/* Sign In — participates in the hover glide */}
         <Link
           href="/login"
-          className="rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors duration-[180ms] hover:bg-[var(--color-surface-0)] hover:text-[var(--color-text-primary)]"
+          onMouseEnter={() => setHoveredItem("sign-in")}
+          onMouseLeave={() => setHoveredItem(null)}
+          className="relative rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors duration-[180ms] hover:text-[var(--color-text-primary)]"
         >
-          Sign In
+          {bgTarget === "sign-in" && (
+            <motion.span
+              layoutId="nav-bg"
+              className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
+              transition={SLIDE_TRANSITION}
+            />
+          )}
+          <span className="relative z-10">Sign In</span>
         </Link>
 
         {/* Get Started — arrow expands on hover, no empty space at rest */}
