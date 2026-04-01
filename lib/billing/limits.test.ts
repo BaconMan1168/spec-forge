@@ -247,6 +247,45 @@ describe("canExport", () => {
     expect(result.allowed).toBe(true);
   });
 
+  it("allows free user to re-export an already-exported proposal", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: null },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        // exports table — proposal already in exports
+        return {
+          select: vi.fn((cols: string) => {
+            if (cols.includes("proposal_id") && !cols.includes("count")) {
+              // already-exported check returns a row
+              return {
+                eq: vi.fn(() => ({
+                  eq: vi.fn().mockResolvedValue({
+                    data: [{ proposal_id: "prop-1" }],
+                    error: null,
+                  }),
+                })),
+              };
+            }
+            return { eq: vi.fn() };
+          }),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canExport("user-1", "proj-1", "prop-1");
+    expect(result.allowed).toBe(true);
+  });
+
   it("allows free user with 2 distinct exports in project", async () => {
     const supabase = {
       from: vi.fn((table: string) => {
