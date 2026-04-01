@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { canCreateProject } from "@/lib/billing/limits";
 
 export async function createProject(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
@@ -15,6 +16,11 @@ export async function createProject(formData: FormData) {
   if (!user) {
     redirect("/login");
     return;
+  }
+
+  const limitResult = await canCreateProject(user.id);
+  if (!limitResult.allowed) {
+    throw new Error(limitResult.reason);
   }
 
   const { data, error } = await supabase
