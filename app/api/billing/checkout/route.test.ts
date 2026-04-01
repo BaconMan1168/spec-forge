@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
-vi.mock("@/lib/billing/config", () => ({ BILLING_ENABLED: true }));
 vi.mock("@/lib/billing/subscriptions", () => ({ getUserSubscription: vi.fn() }));
 vi.mock("@/lib/billing/checkout", () => ({ createCheckoutSession: vi.fn() }));
 

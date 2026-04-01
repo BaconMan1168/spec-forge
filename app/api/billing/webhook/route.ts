@@ -1,17 +1,8 @@
 import Stripe from "stripe";
 import { getStripe } from "@/lib/billing/stripe";
-import { BILLING_ENABLED } from "@/lib/billing/config";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(request: Request) {
-  if (!BILLING_ENABLED) {
-    return Response.json(
-      { error: { code: "BILLING_DISABLED" } },
-      { status: 503 }
-    );
-  }
-
-  // Raw body required for Stripe signature verification — do NOT parse as JSON first
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
@@ -61,7 +52,6 @@ export async function POST(request: Request) {
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata?.userId;
       if (!userId) break;
-      // Idempotency: skip the write if the status hasn't changed
       const { data: existing } = await supabase
         .from("profiles")
         .select("subscription_status")

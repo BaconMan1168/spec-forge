@@ -1,16 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { BILLING_ENABLED } from "@/lib/billing/config";
 import { getUserSubscription } from "@/lib/billing/subscriptions";
 import { createCheckoutSession } from "@/lib/billing/checkout";
 
 export async function POST(request: Request) {
-  if (!BILLING_ENABLED) {
-    return Response.json(
-      { error: { code: "BILLING_DISABLED", message: "Billing is not enabled" } },
-      { status: 503 }
-    );
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,7 +15,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Duplicate subscription guard
   const subscription = await getUserSubscription(user.id);
   if (subscription.subscriptionStatus === "active") {
     return Response.json(
