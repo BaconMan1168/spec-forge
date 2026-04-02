@@ -39,7 +39,7 @@ vi.mock("motion/react", async () => {
     ({ children, ...rest }: Record<string, unknown>) =>
       createElement(el as string, stripMotionProps(rest) as Record<string, unknown>, children as React.ReactNode);
   return {
-    motion: { div: make("div"), nav: make("nav") },
+    motion: { div: make("div"), nav: make("nav"), span: make("span") },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   };
 });

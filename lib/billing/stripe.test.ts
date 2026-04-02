@@ -9,14 +9,7 @@ describe("getStripe", () => {
     vi.unstubAllEnvs();
   });
 
-  it("throws when STRIPE_ENABLED is not true", async () => {
-    vi.stubEnv("STRIPE_ENABLED", "false");
-    const { getStripe } = await import("./stripe");
-    expect(() => getStripe()).toThrow("Billing is not enabled");
-  });
-
-  it("returns a Stripe instance when STRIPE_ENABLED is true", async () => {
-    vi.stubEnv("STRIPE_ENABLED", "true");
+  it("returns a Stripe instance when STRIPE_SECRET_KEY is set", async () => {
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_fake");
     const { getStripe } = await import("./stripe");
     const stripe = getStripe();
