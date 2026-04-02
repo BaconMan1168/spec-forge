@@ -75,24 +75,9 @@ Active PMs and founders using SpecForge regularly.
 - re-run analysis after adding feedback
 - priority AI processing
 
-## Team — $79/month
-
-### Who It’s For
-
-Small teams needing shared access and collaboration.
-
-### Included
-
-- everything in Pro
-- up to 5 team members
-- shared workspaces and projects
-- commenting and annotation
-- admin controls and role-based access
-
 ## Pricing Rationale
 
 - $29 is positioned as an easy individual spend.
-- $79 is priced for lightweight team adoption without procurement friction.
 - Free should be useful enough to build habit, but limited enough to create upgrade triggers.
 
 ## Key Metrics to Watch
