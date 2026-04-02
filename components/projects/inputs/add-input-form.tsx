@@ -13,6 +13,8 @@ import {
   pasteFeedbackText,
   type UploadResult,
 } from "@/app/actions/feedback-files";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
+import type { LimitResult } from "@/lib/billing/limits";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -24,9 +26,13 @@ const stepVariants = {
 
 interface AddInputFormProps {
   projectId: string;
+  canAddFile?: LimitResult;
 }
 
-export function AddInputForm({ projectId }: AddInputFormProps) {
+export function AddInputForm({
+  projectId,
+  canAddFile = { allowed: true, reason: "" },
+}: AddInputFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [direction, setDirection] = useState(1);
@@ -201,8 +207,8 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
                 onSourceLabelChange={setSourceLabel}
                 sourceLabelError={sourceLabelError}
                 onBack={goToStep1}
-                onSubmit={handleSubmit}
-                isSubmitting={isPending}
+                onSubmit={canAddFile.allowed ? handleSubmit : () => {}}
+                isSubmitting={isPending || !canAddFile.allowed}
               />
             ) : (
               <StepUpload
@@ -212,9 +218,22 @@ export function AddInputForm({ projectId }: AddInputFormProps) {
                 onSourceLabelChange={setSourceLabel}
                 sourceLabelError={sourceLabelError}
                 onBack={goToStep1}
-                onSubmit={handleSubmit}
-                isSubmitting={isPending}
+                onSubmit={canAddFile.allowed ? handleSubmit : () => {}}
+                isSubmitting={isPending || !canAddFile.allowed}
               />
+            )}
+            {step === 2 && !canAddFile.allowed && (
+              <div className="mt-3 flex justify-end">
+                <PlanLimitTooltip allowed={canAddFile.allowed} reason={canAddFile.reason}>
+                  <Button
+                    size="sm"
+                    disabled={isPending || !canAddFile.allowed}
+                    onClick={canAddFile.allowed ? handleSubmit : undefined}
+                  >
+                    Upload
+                  </Button>
+                </PlanLimitTooltip>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
