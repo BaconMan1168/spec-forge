@@ -48,9 +48,9 @@ describe("PricingPage", () => {
     expect(screen.getByText("$0")).toBeInTheDocument();
   });
 
-  it("renders the Get Early Access link pointing to /login", () => {
+  it("renders the Try for Free link pointing to /login", () => {
     render(<PricingPage />);
-    const link = screen.getByRole("link", { name: /get early access/i });
+    const link = screen.getByRole("link", { name: /try for free/i });
     expect(link).toHaveAttribute("href", "/login");
   });
 
@@ -64,9 +64,9 @@ describe("PricingPage", () => {
     expect(screen.getByText("$29")).toBeInTheDocument();
   });
 
-  it("renders a disabled Coming Soon button for the Pro tier", () => {
+  it("renders an enabled Upgrade to Pro button for the Pro tier", () => {
     render(<PricingPage />);
-    const button = screen.getByRole("button", { name: /coming soon/i });
-    expect(button).toBeDisabled();
+    const button = screen.getByRole("button", { name: /upgrade to pro/i });
+    expect(button).not.toBeDisabled();
   });
 });

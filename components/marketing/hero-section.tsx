@@ -19,21 +19,6 @@ export function HeroSection() {
       />
 
       <div className="w-full">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: EASE }}
-          className="mb-12 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)]/70 px-4 py-1.5 text-[13px] text-[var(--color-text-secondary)]"
-        >
-          <span
-            aria-hidden="true"
-            className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--color-accent-primary)]"
-            style={{ boxShadow: "0 0 8px hsla(40,85%,58%,0.7)" }}
-          />
-          Now in Early Access
-        </motion.div>
-
         {/* Staggered headline — line 1 left, line 2 right */}
         <div className="mb-14">
           <motion.span

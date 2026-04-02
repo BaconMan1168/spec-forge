@@ -49,6 +49,12 @@ const PRO_FEATURES = [
   "Re-run analysis after adding feedback",
 ];
 
+async function handleUpgrade() {
+  const res = await fetch("/api/billing/checkout", { method: "POST" });
+  const body = await res.json();
+  if (body.url) window.location.href = body.url;
+}
+
 export default function PricingPage() {
   return (
     <main className="relative z-10 mx-auto max-w-[1200px] px-16 pb-[120px] pt-[160px]">
@@ -78,7 +84,7 @@ export default function PricingPage() {
               </span>
             </div>
             <p className="mb-8 text-[14px] text-[var(--color-text-tertiary)]">
-              Free during beta. No credit card required.
+              No credit card required.
             </p>
             <ul className="mb-10 flex flex-col gap-3">
               {FREE_FEATURES.map((f) => (
@@ -96,7 +102,7 @@ export default function PricingPage() {
                 href="/login"
                 className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
               >
-                Get Early Access
+                Try for Free
                 <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
                   →
                 </span>
@@ -105,17 +111,12 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
-        {/* Pro card — 500ms sequential delay */}
+        {/* Pro card — live */}
         <motion.div {...CARD_REVEAL(0.5)} className="w-full max-w-[420px]">
-          <div className="flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-10 opacity-80 transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
-            <div className="mb-5 flex items-center justify-between">
-              <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-                Pro
-              </p>
-              <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent-muted)] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-accent-primary)]">
-                Coming Soon
-              </span>
-            </div>
+          <div className="flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-10 transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
+            <p className="mb-5 text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+              Pro
+            </p>
             <div className="mb-2 text-[56px] font-bold leading-none text-[var(--color-text-primary)]">
               $29{" "}
               <span className="text-[20px] font-normal text-[var(--color-text-tertiary)]">
@@ -138,10 +139,13 @@ export default function PricingPage() {
             </ul>
             <div className="mt-auto">
               <button
-                disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-[var(--radius-pill)] bg-[var(--color-surface-1)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-text-disabled)]"
+                onClick={handleUpgrade}
+                className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
               >
-                Coming Soon
+                Upgrade to Pro
+                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                  →
+                </span>
               </button>
             </div>
           </div>
