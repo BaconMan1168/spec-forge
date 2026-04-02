@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Star } from "lucide-react";
 import { AnalyzeButton } from "./analyze-button";
+import type { LimitResult } from "@/lib/billing/limits";
 
 interface WorkspaceShellProps {
   projectId: string;
@@ -15,6 +16,7 @@ interface WorkspaceShellProps {
   inputsSection: React.ReactNode;
   themesContent: React.ReactNode;
   proposalsContent: React.ReactNode;
+  canRerun: LimitResult;
 }
 
 function PulseSkeleton() {
@@ -49,6 +51,7 @@ export function WorkspaceShell({
   inputsSection,
   themesContent,
   proposalsContent,
+  canRerun,
 }: WorkspaceShellProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -61,6 +64,8 @@ export function WorkspaceShell({
           projectId={projectId}
           hasInputs={hasInputs}
           isStale={isStale}
+          hasResults={hasResults}
+          canRerun={canRerun}
           onAnalyzingChange={setIsAnalyzing}
         />
       </div>

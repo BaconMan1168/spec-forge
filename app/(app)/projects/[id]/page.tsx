@@ -10,6 +10,7 @@ import { ThemesSection } from "@/components/projects/workspace/themes-section";
 import { ProposalsSection } from "@/components/projects/workspace/proposals-section";
 import { getFeedbackFiles } from "@/app/actions/feedback-files";
 import { getInsights, getProposals, getLastAnalysisRun } from "@/app/actions/analysis";
+import { canRerunAnalysis } from "@/lib/billing/limits";
 import type { Project } from "@/lib/types/database";
 
 export default async function ProjectPage({
@@ -36,6 +37,14 @@ export default async function ProjectPage({
     getProposals(id),
     getLastAnalysisRun(id),
   ]);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const canRerun = user
+    ? await canRerunAnalysis(user.id)
+    : { allowed: false, reason: "Not authenticated" };
 
   const hasInputs = feedbackFiles.length > 0;
   const lastAnalyzedAt = lastRun?.created_at ?? null;
@@ -102,6 +111,7 @@ export default async function ProjectPage({
         hasResults={hasResults}
         insightsCount={insights.length}
         proposalsCount={proposals.length}
+        canRerun={canRerun}
         addInputsButton={
           <Link
             href={`/projects/${id}/add`}
