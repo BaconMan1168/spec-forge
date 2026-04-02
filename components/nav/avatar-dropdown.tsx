@@ -3,7 +3,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 interface AvatarDropdownProps {
@@ -61,6 +62,15 @@ export function AvatarDropdown({ email }: AvatarDropdownProps) {
           <p className="border-b border-[var(--color-border-subtle)] px-2.5 pb-2 pt-2 text-[12px] text-[var(--color-text-tertiary)]">
             {email}
           </p>
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex items-center gap-2 rounded-[var(--radius-xs)] px-2.5 py-2 text-[14px] font-medium text-[var(--color-text-secondary)] transition-colors duration-[120ms] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+          >
+            <Settings size={14} />
+            Settings
+          </Link>
           <button
             onClick={handleSignOut}
             role="menuitem"
