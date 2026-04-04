@@ -49,36 +49,63 @@ Freemium is preferred over a time-limited free trial.
 
 ### Who It’s For
 
-Solo founders and light users validating fit.
+Solo founders and light users validating initial product ideas and fit.
 
 ### Included
 
 - 2 projects per month
 - up to 5 files per project
+- 1 AI analysis run per project
 - AI analysis and proposal generation
-- Markdown export up to 3 proposals per project
+- basic Markdown export
 - no long-term session persistence
 - projects expire after 7 days
 
-## Pro — $29/month
+### Purpose
+
+The Free tier is designed to deliver the core “aha” moment while introducing natural friction that encourages upgrading for continued or deeper use.
+
+---
+
+## Pro — $9/month
 
 ### Who It’s For
 
-Active PMs and founders using SpecForge regularly.
+Active founders, PMs, and solo builders using SpecForge regularly as part of their workflow.
+
+### Included
+
+- up to 20 projects per month
+- up to 10 files per project
+- unlimited AI analysis re-runs (within project limits)
+- full proposal generation and export
+- indefinite session persistence
+- faster AI processing
+
+### Purpose
+
+The Pro tier removes key friction from the Free tier, enabling iterative workflows, repeated analysis, and consistent long-term usage.
+
+---
+
+## Max — $19/month
+
+### Who It’s For
+
+Power users, heavy researchers, and teams working with larger volumes of feedback.
 
 ### Included
 
 - unlimited projects
 - up to 20 files per project
-- full proposal export
-- indefinite session persistence
-- re-run analysis after adding feedback
-- priority AI processing
+- unlimited AI analysis and re-runs
+- priority AI processing (queue prioritization)
+- support for larger and more complex input datasets
+- early access to new features and improvements
 
-## Pricing Rationale
+### Purpose
 
-- $29 is positioned as an easy individual spend.
-- Free should be useful enough to build habit, but limited enough to create upgrade triggers.
+The Max tier supports high-volume, high-frequency usage with improved performance, scalability, and priority access to system resources.
 
 ## Key Metrics to Watch
 
