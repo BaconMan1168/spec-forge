@@ -2,13 +2,32 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 interface PlanCardProps {
-  plan: "free" | "pro";
+  plan: "free" | "pro" | "max";
   projectsThisMonth: number;
   stripeCustomerId: string | null;
 }
 
+const PLAN_LABELS: Record<"free" | "pro" | "max", string> = {
+  free: "Free",
+  pro: "Pro",
+  max: "Max",
+};
+
+const PLAN_DESCRIPTIONS: Record<"free" | "pro" | "max", string> = {
+  free: "2 projects/mo · 5 files/project · 3 exports/project",
+  pro: "20 projects/mo · 10 files/project · Unlimited exports",
+  max: "Unlimited projects · 20 files/project · Priority AI",
+};
+
+const PROJECT_LIMITS: Record<"free" | "pro" | "max", number | null> = {
+  free: 2,
+  pro: 20,
+  max: null,
+};
+
 export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
-  const isPro = plan === "pro";
+  const isPaid = plan === "pro" || plan === "max";
+  const limit = PROJECT_LIMITS[plan];
 
   return (
     <div className="rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-8">
@@ -18,9 +37,9 @@ export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
 
       <div className="mb-1 flex items-center gap-3">
         <span className="text-[22px] font-bold text-[var(--color-text-primary)]">
-          {isPro ? "Pro" : "Free"}
+          {PLAN_LABELS[plan]}
         </span>
-        {isPro && (
+        {isPaid && (
           <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-accent-primary)]">
             Active
           </span>
@@ -28,9 +47,7 @@ export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
       </div>
 
       <p className="mb-6 text-[13px] text-[var(--color-text-tertiary)]">
-        {isPro
-          ? "Unlimited projects · 20 files/project · Priority AI"
-          : "2 projects/mo · 5 files/project · 3 exports/project"}
+        {PLAN_DESCRIPTIONS[plan]}
       </p>
 
       <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] p-5">
@@ -38,14 +55,14 @@ export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
         <div className="flex gap-6">
           <div>
             <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-              {isPro ? projectsThisMonth : `${projectsThisMonth} / 2`}
+              {limit === null ? projectsThisMonth : `${projectsThisMonth} / ${limit}`}
             </p>
             <p className="text-[11px] text-[var(--color-text-tertiary)]">projects</p>
           </div>
         </div>
       </div>
 
-      {isPro ? (
+      {isPaid ? (
         <ManageSubscriptionButton />
       ) : (
         <UpgradeButton />
@@ -56,14 +73,12 @@ export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
 
 function UpgradeButton() {
   return (
-    <form action="/api/billing/checkout" method="POST">
-      <button
-        type="submit"
-        className="w-full rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[14px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
-      >
-        Upgrade to Pro — $29/mo
-      </button>
-    </form>
+    <a
+      href="/pricing"
+      className="block w-full rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[14px] text-center text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+    >
+      View Plans — from $9/mo
+    </a>
   );
 }
 
@@ -95,7 +110,7 @@ export default async function SettingsPage() {
   const [{ data: profile }, { count: projectCount }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("subscription_status, stripe_customer_id")
+      .select("subscription_status, subscription_plan, stripe_customer_id")
       .eq("id", user.id)
       .single(),
     supabase
@@ -105,7 +120,12 @@ export default async function SettingsPage() {
       .gte("created_at", startOfMonth.toISOString()),
   ]);
 
-  const plan = profile?.subscription_status === "active" ? "pro" : "free";
+  const plan: "free" | "pro" | "max" =
+    profile?.subscription_status !== "active"
+      ? "free"
+      : profile?.subscription_plan === "max"
+        ? "max"
+        : "pro";
   const projectsThisMonth = projectCount ?? 0;
 
   return (
@@ -116,6 +136,7 @@ export default async function SettingsPage() {
       <PlanCard
         plan={plan}
         projectsThisMonth={projectsThisMonth}
+        stripeCustomerId={profile?.stripe_customer_id ?? null}
       />
     </div>
   );

@@ -13,7 +13,7 @@ describe("PlanCard (Free view)", () => {
         stripeCustomerId={null}
       />
     );
-    expect(screen.getByText(/upgrade to pro/i)).toBeInTheDocument();
+    expect(screen.getByText(/view plans/i)).toBeInTheDocument();
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
     expect(screen.getByText(/Free/)).toBeInTheDocument();
   });
@@ -30,6 +30,21 @@ describe("PlanCard (Pro view)", () => {
     );
     expect(screen.getByText(/manage subscription/i)).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("7 / 20")).toBeInTheDocument();
+  });
+});
+
+describe("PlanCard (Max view)", () => {
+  it("shows manage subscription for max user", () => {
+    render(
+      <PlanCard
+        plan="max"
+        projectsThisMonth={42}
+        stripeCustomerId="cus_456"
+      />
+    );
+    expect(screen.getByText(/manage subscription/i)).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getByText("42")).toBeInTheDocument();
   });
 });

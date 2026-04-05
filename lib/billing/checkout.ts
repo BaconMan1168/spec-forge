@@ -6,11 +6,13 @@ export async function createCheckoutSession({
   userEmail,
   stripeCustomerId,
   returnUrl,
+  plan = "pro",
 }: {
   userId: string;
   userEmail: string;
   stripeCustomerId: string | null;
   returnUrl: string;
+  plan?: "pro" | "max";
 }): Promise<string> {
   const stripe = getStripe();
 
@@ -18,11 +20,11 @@ export async function createCheckoutSession({
     mode: "subscription",
     customer: stripeCustomerId ?? undefined,
     customer_email: stripeCustomerId ? undefined : userEmail,
-    line_items: [{ price: PLANS.pro.stripePriceId, quantity: 1 }],
+    line_items: [{ price: PLANS[plan].stripePriceId, quantity: 1 }],
     success_url: `${returnUrl}/dashboard?checkout=success`,
     cancel_url: `${returnUrl}/pricing`,
-    metadata: { userId },
-    subscription_data: { metadata: { userId } },
+    metadata: { userId, plan },
+    subscription_data: { metadata: { userId, plan } },
   });
 
   if (!session.url) throw new Error("No session URL returned from Stripe");

@@ -37,12 +37,14 @@ export async function POST(request: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.userId;
+      const plan = session.metadata?.plan === "max" ? "max" : "pro";
       if (!userId || !session.customer || !session.subscription) break;
       await supabase.from("profiles").upsert({
         id: userId,
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: session.subscription as string,
         subscription_status: "active",
+        subscription_plan: plan,
         updated_at: new Date().toISOString(),
       });
       break;
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
         .update({
           stripe_subscription_id: null,
           subscription_status: "canceled",
+          subscription_plan: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);

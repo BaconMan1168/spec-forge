@@ -41,16 +41,30 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
+  "Up to 20 projects per month",
+  "Up to 10 files per project",
+  "Full proposal export",
+  "Indefinite session persistence",
+  "Faster AI processing",
+  "Re-run analysis after adding feedback",
+];
+
+const MAX_FEATURES = [
   "Unlimited projects",
   "Up to 20 files per project",
   "Full proposal export",
   "Indefinite session persistence",
   "Priority AI processing",
   "Re-run analysis after adding feedback",
+  "Early access to new features",
 ];
 
-async function handleUpgrade() {
-  const res = await fetch("/api/billing/checkout", { method: "POST" });
+async function handleUpgrade(plan: "pro" | "max") {
+  const res = await fetch("/api/billing/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan }),
+  });
   const body = await res.json();
   if (body.url) window.location.href = body.url;
 }
@@ -72,7 +86,7 @@ export default function PricingPage() {
 
       <div className="flex flex-col items-center justify-center gap-8 md:flex-row md:items-stretch">
         {/* Free card */}
-        <motion.div {...CARD_REVEAL(0)} className="w-full max-w-[420px]">
+        <motion.div {...CARD_REVEAL(0)} className="w-full max-w-[360px]">
           <div className="flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-10 transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
             <p className="mb-5 text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
               Free
@@ -111,14 +125,14 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
-        {/* Pro card — live */}
-        <motion.div {...CARD_REVEAL(0.5)} className="w-full max-w-[420px]">
+        {/* Pro card */}
+        <motion.div {...CARD_REVEAL(0.3)} className="w-full max-w-[360px]">
           <div className="flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-10 transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
             <p className="mb-5 text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
               Pro
             </p>
             <div className="mb-2 text-[56px] font-bold leading-none text-[var(--color-text-primary)]">
-              $29{" "}
+              $9{" "}
               <span className="text-[20px] font-normal text-[var(--color-text-tertiary)]">
                 / month
               </span>
@@ -139,10 +153,50 @@ export default function PricingPage() {
             </ul>
             <div className="mt-auto">
               <button
-                onClick={handleUpgrade}
+                onClick={() => handleUpgrade("pro")}
                 className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
               >
                 Upgrade to Pro
+                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                  →
+                </span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Max card */}
+        <motion.div {...CARD_REVEAL(0.6)} className="w-full max-w-[360px]">
+          <div className="flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-10 transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
+            <p className="mb-5 text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+              Max
+            </p>
+            <div className="mb-2 text-[56px] font-bold leading-none text-[var(--color-text-primary)]">
+              $19{" "}
+              <span className="text-[20px] font-normal text-[var(--color-text-tertiary)]">
+                / month
+              </span>
+            </div>
+            <p className="mb-8 text-[14px] text-[var(--color-text-tertiary)]">
+              For power users and teams running high volumes of feedback.
+            </p>
+            <ul className="mb-10 flex flex-col gap-3">
+              {MAX_FEATURES.map((f) => (
+                <li
+                  key={f}
+                  className="flex items-center gap-3 text-[14px] text-[var(--color-text-secondary)]"
+                >
+                  <CheckIcon />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto">
+              <button
+                onClick={() => handleUpgrade("max")}
+                className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+              >
+                Upgrade to Max
                 <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
                   →
                 </span>

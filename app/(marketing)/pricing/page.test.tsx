@@ -59,14 +59,30 @@ describe("PricingPage", () => {
     expect(screen.getByText("Pro")).toBeInTheDocument();
   });
 
-  it("renders the $29 price", () => {
+  it("renders the $9 price for Pro", () => {
     render(<PricingPage />);
-    expect(screen.getByText("$29")).toBeInTheDocument();
+    expect(screen.getByText("$9")).toBeInTheDocument();
   });
 
-  it("renders an enabled Upgrade to Pro button for the Pro tier", () => {
+  it("renders the Max tier label", () => {
+    render(<PricingPage />);
+    expect(screen.getByText("Max")).toBeInTheDocument();
+  });
+
+  it("renders the $19 price for Max", () => {
+    render(<PricingPage />);
+    expect(screen.getByText("$19")).toBeInTheDocument();
+  });
+
+  it("renders an enabled Upgrade to Pro button", () => {
     render(<PricingPage />);
     const button = screen.getByRole("button", { name: /upgrade to pro/i });
+    expect(button).not.toBeDisabled();
+  });
+
+  it("renders an enabled Upgrade to Max button", () => {
+    render(<PricingPage />);
+    const button = screen.getByRole("button", { name: /upgrade to max/i });
     expect(button).not.toBeDisabled();
   });
 });

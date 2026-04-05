@@ -8,7 +8,8 @@ vi.mock("./config", () => ({
   BILLING_ENABLED: true,
   PLANS: {
     free: { name: "Free", priceUsd: 0 },
-    pro: { name: "Pro", priceUsd: 29, stripePriceId: "price_test_pro" },
+    pro: { name: "Pro", priceUsd: 9, stripePriceId: "price_test_pro" },
+    max: { name: "Max", priceUsd: 19, stripePriceId: "price_test_max" },
   },
 }));
 
@@ -56,6 +57,28 @@ describe("createCheckoutSession", () => {
     });
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ customer: "cus_existing" })
+    );
+  });
+
+  it("uses max price ID when plan is max", async () => {
+    const mockCreate = vi
+      .fn()
+      .mockResolvedValue({ url: "https://checkout.stripe.com/pay/cs_test_max" });
+    (getStripe as ReturnType<typeof vi.fn>).mockReturnValue({
+      checkout: { sessions: { create: mockCreate } },
+    });
+    await createCheckoutSession({
+      userId: "user-1",
+      userEmail: "user@example.com",
+      stripeCustomerId: null,
+      returnUrl: "https://app.example.com",
+      plan: "max",
+    });
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: "price_test_max", quantity: 1 }],
+        metadata: expect.objectContaining({ plan: "max" }),
+      })
     );
   });
 

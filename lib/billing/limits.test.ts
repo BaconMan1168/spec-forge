@@ -18,13 +18,13 @@ beforeEach(() => {
 // ── getUserPlan ──────────────────────────────────────────────────────────────
 
 describe("getUserPlan", () => {
-  it("returns 'pro' when subscription_status is active", async () => {
+  it("returns 'pro' when subscription_status is active and plan is pro", async () => {
     const supabase = {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
-              data: { subscription_status: "active" },
+              data: { subscription_status: "active", subscription_plan: "pro" },
               error: null,
             }),
           })),
@@ -35,13 +35,30 @@ describe("getUserPlan", () => {
     expect(await getUserPlan("user-1")).toBe("pro");
   });
 
+  it("returns 'max' when subscription_status is active and plan is max", async () => {
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn().mockResolvedValue({
+              data: { subscription_status: "active", subscription_plan: "max" },
+              error: null,
+            }),
+          })),
+        })),
+      })),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    expect(await getUserPlan("user-1")).toBe("max");
+  });
+
   it("returns 'free' when subscription_status is null", async () => {
     const supabase = {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
-              data: { subscription_status: null },
+              data: { subscription_status: null, subscription_plan: null },
               error: null,
             }),
           })),
@@ -56,7 +73,7 @@ describe("getUserPlan", () => {
 // ── canCreateProject ─────────────────────────────────────────────────────────
 
 describe("canCreateProject", () => {
-  it("allows pro user unconditionally", async () => {
+  it("allows max user unconditionally", async () => {
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -64,7 +81,7 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: "active" },
+                  data: { subscription_status: "active", subscription_plan: "max" },
                   error: null,
                 }),
               })),
@@ -79,6 +96,65 @@ describe("canCreateProject", () => {
     expect(result.allowed).toBe(true);
   });
 
+  it("allows pro user with 19 projects this month", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              gte: vi.fn().mockResolvedValue({ count: 19, error: null }),
+            })),
+          })),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canCreateProject("user-1");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("blocks pro user at 20 projects this month", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              gte: vi.fn().mockResolvedValue({ count: 20, error: null }),
+            })),
+          })),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canCreateProject("user-1");
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/monthly limit/i);
+  });
+
   it("allows free user with 1 project this month", async () => {
     const supabase = {
       from: vi.fn((table: string) => {
@@ -87,7 +163,7 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -116,7 +192,7 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -142,7 +218,7 @@ describe("canCreateProject", () => {
 // ── canAddFile ───────────────────────────────────────────────────────────────
 
 describe("canAddFile", () => {
-  it("allows pro user unconditionally", async () => {
+  it("allows max user with 19 files in project", async () => {
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -150,19 +226,106 @@ describe("canAddFile", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: "active" },
+                  data: { subscription_status: "active", subscription_plan: "max" },
                   error: null,
                 }),
               })),
             })),
           };
         }
-        return { select: vi.fn() };
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ count: 19, error: null }),
+          })),
+        };
       }),
     };
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
     const result = await canAddFile("user-1", "proj-1");
     expect(result.allowed).toBe(true);
+  });
+
+  it("blocks max user at 20 files in project", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "max" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ count: 20, error: null }),
+          })),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canAddFile("user-1", "proj-1");
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/20 files/i);
+  });
+
+  it("allows pro user with 9 files in project", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ count: 9, error: null }),
+          })),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canAddFile("user-1", "proj-1");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("blocks pro user at 10 files in project", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ count: 10, error: null }),
+          })),
+        };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canAddFile("user-1", "proj-1");
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/10 files/i);
   });
 
   it("allows free user with 4 files in project", async () => {
@@ -173,7 +336,7 @@ describe("canAddFile", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -200,7 +363,7 @@ describe("canAddFile", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -232,7 +395,30 @@ describe("canExport", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: "active" },
+                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        return { select: vi.fn() };
+      }),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canExport("user-1", "proj-1", "prop-1");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("allows max user unconditionally", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { subscription_status: "active", subscription_plan: "max" },
                   error: null,
                 }),
               })),
@@ -255,7 +441,7 @@ describe("canExport", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -294,7 +480,7 @@ describe("canExport", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -330,7 +516,7 @@ describe("canExport", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null },
+                  data: { subscription_status: null, subscription_plan: null },
                   error: null,
                 }),
               })),
@@ -369,7 +555,25 @@ describe("canRerunAnalysis", () => {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
-              data: { subscription_status: "active" },
+              data: { subscription_status: "active", subscription_plan: "pro" },
+              error: null,
+            }),
+          })),
+        })),
+      })),
+    };
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    const result = await canRerunAnalysis("user-1");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("allows max user", async () => {
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn().mockResolvedValue({
+              data: { subscription_status: "active", subscription_plan: "max" },
               error: null,
             }),
           })),
@@ -387,7 +591,7 @@ describe("canRerunAnalysis", () => {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
-              data: { subscription_status: null },
+              data: { subscription_status: null, subscription_plan: null },
               error: null,
             }),
           })),

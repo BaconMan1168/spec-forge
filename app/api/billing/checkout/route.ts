@@ -33,12 +33,21 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_APP_URL ??
     "http://localhost:3000";
 
+  let plan: "pro" | "max" = "pro";
+  try {
+    const body = await request.json();
+    if (body?.plan === "max") plan = "max";
+  } catch {
+    // form POST or missing body — default to "pro"
+  }
+
   try {
     const url = await createCheckoutSession({
       userId: user.id,
       userEmail: user.email!,
       stripeCustomerId: subscription.stripeCustomerId,
       returnUrl: origin,
+      plan,
     });
     return Response.json({ url });
   } catch {
