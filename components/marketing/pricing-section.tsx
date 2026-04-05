@@ -65,7 +65,7 @@ export function PricingSection() {
       <motion.div {...REVEAL_UP(0.9)} className="mx-auto max-w-[580px]">
         <div className="rounded-[28px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-14 text-center transition-[border-color,box-shadow] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-3)]">
           <p className="mb-5 text-[13px] font-medium uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-            Early Access
+            Free
           </p>
           <div className="mb-2.5 text-[64px] font-bold leading-none text-[var(--color-text-primary)]">
             $0{" "}
@@ -74,7 +74,7 @@ export function PricingSection() {
             </span>
           </div>
           <p className="mb-10 text-[15px] text-[var(--color-text-tertiary)]">
-            Free during beta. No credit card required.
+            No credit card required.
           </p>
           <ul className="mb-11 flex flex-col gap-4 text-left">
             {FEATURES.map((f) => (
@@ -88,7 +88,7 @@ export function PricingSection() {
             href="/login"
             className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[18px] text-[16px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
           >
-            Get Early Access
+            Try for Free
             <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
               →
             </span>

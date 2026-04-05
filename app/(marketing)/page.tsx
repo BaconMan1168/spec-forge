@@ -13,7 +13,6 @@ export default function HomePage() {
       <div className="relative z-10 mx-auto max-w-[1100px] h-px bg-gradient-to-r from-transparent via-[var(--color-border-subtle)] to-transparent" />
       <HowItWorksSection />
       <div className="relative z-10 mx-auto max-w-[1100px] h-px bg-gradient-to-r from-transparent via-[var(--color-border-subtle)] to-transparent" />
-      <PricingSection />
       <CtaSection />
     </>
   );

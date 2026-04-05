@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { AddInputForm } from "@/components/projects/inputs/add-input-form";
+import { canAddFile } from "@/lib/billing/limits";
 import type { Project } from "@/lib/types/database";
 
 export default async function AddInputsPage({
@@ -13,15 +14,18 @@ export default async function AddInputsPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [{ data: project }, { data: { user } }] = await Promise.all([
+    supabase.from("projects").select("*").eq("id", id).single(),
+    supabase.auth.getUser(),
+  ]);
 
   if (!project) notFound();
 
   const p = project as Project;
+
+  const canAddFileResult = user
+    ? await canAddFile(user.id, id)
+    : { allowed: false, reason: "Not authenticated" };
 
   return (
     <div className="mx-auto max-w-[640px]">
@@ -39,7 +43,7 @@ export default async function AddInputsPage({
         Add Feedback
       </h1>
 
-      <AddInputForm projectId={id} />
+      <AddInputForm projectId={id} canAddFile={canAddFileResult} />
     </div>
   );
 }

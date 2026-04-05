@@ -49,9 +49,9 @@ describe("PricingSection", () => {
     expect(screen.getByText("$0")).toBeInTheDocument();
   });
 
-  it("renders Get Early Access button linking to /login", () => {
+  it("renders Try for Free button linking to /login", () => {
     render(<PricingSection />);
-    const link = screen.getByRole("link", { name: /get early access/i });
+    const link = screen.getByRole("link", { name: /try for free/i });
     expect(link).toHaveAttribute("href", "/login");
   });
 

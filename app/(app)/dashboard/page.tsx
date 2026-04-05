@@ -1,5 +1,6 @@
 // app/(app)/dashboard/page.tsx
 import { createClient } from "@/lib/supabase/server";
+import { canCreateProject } from "@/lib/billing/limits";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
 import { ProjectTile } from "@/components/projects/project-tile";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -7,10 +8,14 @@ import type { Project } from "@/lib/types/database";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data: projects }, { data: { user } }] = await Promise.all([
+    supabase.from("projects").select("*").order("created_at", { ascending: false }),
+    supabase.auth.getUser(),
+  ]);
+
+  const canCreate = user
+    ? await canCreateProject(user.id)
+    : { allowed: false, reason: "Not authenticated" };
 
   return (
     <div>
@@ -22,7 +27,7 @@ export default async function DashboardPage() {
           </h1>
         </BlurFade>
         <BlurFade delay={0.04} duration={0.28}>
-          <NewProjectModal />
+          <NewProjectModal canCreate={canCreate} />
         </BlurFade>
       </div>
 

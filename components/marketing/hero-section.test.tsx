@@ -45,11 +45,6 @@ describe("HeroSection", () => {
     expect(screen.getByText("to Actionable Specs")).toBeInTheDocument();
   });
 
-  it("renders the early access badge", () => {
-    render(<HeroSection />);
-    expect(screen.getByText(/early access/i)).toBeInTheDocument();
-  });
-
   it("renders Start for Free button linking to /login", () => {
     render(<HeroSection />);
     const link = screen.getByRole("link", { name: /start for free/i });

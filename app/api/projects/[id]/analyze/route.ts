@@ -5,6 +5,7 @@ import {
   persistAnalysisResults,
   countRecentRunsByUser,
 } from "@/app/actions/analysis";
+import { canRerunAnalysis } from "@/lib/billing/limits";
 
 export const maxDuration = 60;
 
@@ -42,7 +43,23 @@ export async function POST(
     );
   }
 
-  // 3. Rate limit check
+  // 3. Re-run billing check (block free users from re-running analysis)
+  const { count: insightCount } = await supabase
+    .from("insights")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+
+  if ((insightCount ?? 0) > 0) {
+    const rerunLimit = await canRerunAnalysis(user.id);
+    if (!rerunLimit.allowed) {
+      return Response.json(
+        { error: { code: "PLAN_LIMIT", message: rerunLimit.reason } },
+        { status: 403 }
+      );
+    }
+  }
+
+  // 4. Rate limit check
   const recentRuns = await countRecentRunsByUser(user.id);
   if (recentRuns >= RATE_LIMIT) {
     return Response.json(
@@ -51,7 +68,7 @@ export async function POST(
     );
   }
 
-  // 4. Fetch feedback files
+  // 5. Fetch feedback files
   const { data: files, error: filesError } = await supabase
     .from("feedback_files")
     .select("*")

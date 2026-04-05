@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { ChevronDown, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MagicCard } from "@/components/ui/magic-card";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
+import { exportProposal } from "@/app/actions/exports";
 import type { Proposal } from "@/lib/types/database";
+import type { LimitResult } from "@/lib/billing/limits";
 
 interface ProposalsSectionProps {
   proposals: Proposal[];
   isStale: boolean;
+  projectId: string;
+  exportLimits: Record<string, LimitResult>;
 }
 
 interface SectionProps {
@@ -27,50 +32,47 @@ function PropSection({ label, children }: SectionProps) {
   );
 }
 
-function generateMarkdown(proposal: Proposal): string {
-  const lines: string[] = [];
-  lines.push(`# ${proposal.feature_name}`);
-  lines.push("");
-  lines.push(`## Problem Statement`);
-  lines.push(proposal.problem_statement);
-  lines.push("");
-  if (proposal.evidence.length > 0) {
-    lines.push(`## User Evidence`);
-    for (const e of proposal.evidence) {
-      lines.push(`- "${e.quote}" — ${e.sourceLabel}`);
-    }
-    lines.push("");
-  }
-  if (proposal.ui_changes.length > 0) {
-    lines.push(`## Suggested UI Changes`);
-    for (const item of proposal.ui_changes) lines.push(`- ${item}`);
-    lines.push("");
-  }
-  if (proposal.data_model_changes.length > 0) {
-    lines.push(`## Suggested Data Model Changes`);
-    for (const item of proposal.data_model_changes) lines.push(`- ${item}`);
-    lines.push("");
-  }
-  if (proposal.workflow_changes.length > 0) {
-    lines.push(`## Suggested Workflow Changes`);
-    for (const item of proposal.workflow_changes) lines.push(`- ${item}`);
-    lines.push("");
-  }
-  if (proposal.engineering_tasks.length > 0) {
-    lines.push(`## Engineering Tasks`);
-    for (const item of proposal.engineering_tasks) lines.push(`- ${item}`);
-    lines.push("");
-  }
-  return lines.join("\n");
-}
-
 interface ProposalCardProps {
   proposal: Proposal;
   index: number;
+  projectId: string;
+  canExport: LimitResult;
 }
 
-function ProposalCard({ proposal, index }: ProposalCardProps) {
+function ProposalCard({ proposal, index, projectId, canExport }: ProposalCardProps) {
   const [open, setOpen] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleCopy = () => {
+    startTransition(async () => {
+      try {
+        const markdown = await exportProposal(projectId, proposal.id);
+        await navigator.clipboard.writeText(markdown);
+        setExportError(null);
+      } catch (err) {
+        setExportError(err instanceof Error ? err.message : "Export failed");
+      }
+    });
+  };
+
+  const handleDownload = () => {
+    startTransition(async () => {
+      try {
+        const markdown = await exportProposal(projectId, proposal.id);
+        const blob = new Blob([markdown], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${proposal.feature_name.toLowerCase().replace(/\s+/g, "-")}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setExportError(null);
+      } catch (err) {
+        setExportError(err instanceof Error ? err.message : "Export failed");
+      }
+    });
+  };
 
   return (
     <MagicCard
@@ -80,6 +82,7 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
       <button
         className="flex w-full cursor-pointer items-center gap-3 px-6 py-5 text-left"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
       >
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] text-[12px] font-semibold text-[var(--color-text-tertiary)]">
           {index + 1}
@@ -187,27 +190,29 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
                 </PropSection>
               )}
 
+              {exportError && (
+                <p className="mb-2 text-[12px] text-[var(--color-error)]">{exportError}</p>
+              )}
+
               <div className="mt-5 flex gap-2 border-t border-[var(--color-border-subtle)] pt-4">
-                <button
-                  onClick={() => navigator.clipboard.writeText(generateMarkdown(proposal))}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
-                >
-                  Copy Markdown
-                </button>
-                <button
-                  onClick={() => {
-                    const blob = new Blob([generateMarkdown(proposal)], { type: "text/markdown" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${proposal.feature_name.toLowerCase().replace(/\s+/g, "-")}.md`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
-                >
-                  Download .md
-                </button>
+                <PlanLimitTooltip allowed={canExport.allowed} reason={canExport.reason}>
+                  <button
+                    disabled={!canExport.allowed || isPending}
+                    onClick={handleCopy}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Copy Markdown
+                  </button>
+                </PlanLimitTooltip>
+                <PlanLimitTooltip allowed={canExport.allowed} reason={canExport.reason}>
+                  <button
+                    disabled={!canExport.allowed || isPending}
+                    onClick={handleDownload}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Download .md
+                  </button>
+                </PlanLimitTooltip>
               </div>
             </div>
           </motion.div>
@@ -217,7 +222,12 @@ function ProposalCard({ proposal, index }: ProposalCardProps) {
   );
 }
 
-export function ProposalsSection({ proposals, isStale }: ProposalsSectionProps) {
+export function ProposalsSection({
+  proposals,
+  isStale,
+  projectId,
+  exportLimits,
+}: ProposalsSectionProps) {
   return (
     <>
       {isStale && (
@@ -230,7 +240,13 @@ export function ProposalsSection({ proposals, isStale }: ProposalsSectionProps) 
       )}
       <div className="flex flex-col gap-3">
         {proposals.map((proposal, i) => (
-          <ProposalCard key={proposal.id} proposal={proposal} index={i} />
+          <ProposalCard
+            key={proposal.id}
+            proposal={proposal}
+            index={i}
+            projectId={projectId}
+            canExport={exportLimits[proposal.id] ?? { allowed: true, reason: "" }}
+          />
         ))}
       </div>
     </>

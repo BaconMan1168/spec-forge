@@ -10,6 +10,7 @@ import { ThemesSection } from "@/components/projects/workspace/themes-section";
 import { ProposalsSection } from "@/components/projects/workspace/proposals-section";
 import { getFeedbackFiles } from "@/app/actions/feedback-files";
 import { getInsights, getProposals, getLastAnalysisRun } from "@/app/actions/analysis";
+import { canRerunAnalysis, canExport } from "@/lib/billing/limits";
 import type { Project } from "@/lib/types/database";
 
 export default async function ProjectPage({
@@ -36,6 +37,23 @@ export default async function ProjectPage({
     getProposals(id),
     getLastAnalysisRun(id),
   ]);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const canRerun = user
+    ? await canRerunAnalysis(user.id)
+    : { allowed: false, reason: "Not authenticated" };
+
+  const exportLimits: Record<string, { allowed: boolean; reason: string }> = {};
+  if (user && proposals && proposals.length > 0) {
+    await Promise.all(
+      proposals.map(async (proposal) => {
+        exportLimits[proposal.id] = await canExport(user.id, id, proposal.id);
+      })
+    );
+  }
 
   const hasInputs = feedbackFiles.length > 0;
   const lastAnalyzedAt = lastRun?.created_at ?? null;
@@ -102,6 +120,7 @@ export default async function ProjectPage({
         hasResults={hasResults}
         insightsCount={insights.length}
         proposalsCount={proposals.length}
+        canRerun={canRerun}
         addInputsButton={
           <Link
             href={`/projects/${id}/add`}
@@ -151,7 +170,7 @@ export default async function ProjectPage({
         }
         proposalsContent={
           proposals.length > 0 ? (
-            <ProposalsSection proposals={proposals} isStale={isStale} />
+            <ProposalsSection proposals={proposals} isStale={isStale} projectId={id} exportLimits={exportLimits} />
           ) : (
             <LockedSection
               title="Proposals unlock after analysis"

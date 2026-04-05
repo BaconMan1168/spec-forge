@@ -9,6 +9,10 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
+vi.mock("@/lib/billing/limits", () => ({
+  canCreateProject: vi.fn().mockResolvedValue({ allowed: true, reason: "" }),
+}));
+
 import { createProject } from "./projects";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";

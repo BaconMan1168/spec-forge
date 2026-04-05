@@ -6,6 +6,7 @@ import {
   isSupportedMimeType,
   countWords,
 } from "@/lib/parse/parse-file";
+import { canAddFile as checkCanAddFile } from "@/lib/billing/limits";
 import type { FeedbackFile } from "@/lib/types/database";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -45,11 +46,17 @@ export async function uploadFeedbackFiles(
   if (!user) throw new Error("Unauthenticated");
 
   const projectId = formData.get("project_id") as string;
+  if (!projectId) throw new Error("Project ID is required");
+
+  const limitResult = await checkCanAddFile(user.id, projectId);
+  if (!limitResult.allowed) {
+    throw new Error(limitResult.reason);
+  }
+
   const sourceType = sanitizeSourceLabel(
     (formData.get("source_type") as string) ?? ""
   );
   if (!sourceType) throw new Error("Source label is required");
-  if (!projectId) throw new Error("Project ID is required");
 
   const files = formData.getAll("files") as File[];
   const succeeded: FeedbackFile[] = [];
@@ -125,6 +132,11 @@ export async function pasteFeedbackText(data: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthenticated");
+
+  const limitResult = await checkCanAddFile(user.id, data.projectId);
+  if (!limitResult.allowed) {
+    throw new Error(limitResult.reason);
+  }
 
   const sourceType = sanitizeSourceLabel(data.sourceType);
   const content = data.content.trim();

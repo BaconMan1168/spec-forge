@@ -4,9 +4,16 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("next-themes", () => ({
   useTheme: () => ({ theme: "dark", systemTheme: "dark" }),
 }));
+vi.mock("@/app/actions/exports", () => ({
+  exportProposal: vi.fn().mockResolvedValue("# markdown"),
+}));
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ProposalsSection } from "./proposals-section";
 import type { Proposal } from "@/lib/types/database";
+
+const defaultExportLimits = { allowed: true, reason: "" };
+const makeExportLimits = (...ids: string[]) =>
+  Object.fromEntries(ids.map((id) => [id, defaultExportLimits]));
 
 const makeProposal = (id: string, featureName: string, overrides: Partial<Proposal> = {}): Proposal => ({
   id,
@@ -28,6 +35,8 @@ describe("ProposalsSection", () => {
       <ProposalsSection
         proposals={[makeProposal("p1", "Guided Onboarding"), makeProposal("p2", "CSV Export")]}
         isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1", "p2")}
       />
     );
     expect(screen.getByText("Guided Onboarding")).toBeInTheDocument();
@@ -35,12 +44,26 @@ describe("ProposalsSection", () => {
   });
 
   it("proposal body is hidden by default", () => {
-    render(<ProposalsSection proposals={[makeProposal("p1", "Feature A")]} isStale={false} />);
+    render(
+      <ProposalsSection
+        proposals={[makeProposal("p1", "Feature A")]}
+        isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
+      />
+    );
     expect(screen.queryByText(/problem statement/i)).not.toBeInTheDocument();
   });
 
   it("expands proposal body on header click", () => {
-    render(<ProposalsSection proposals={[makeProposal("p1", "Feature A")]} isStale={false} />);
+    render(
+      <ProposalsSection
+        proposals={[makeProposal("p1", "Feature A")]}
+        isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
+      />
+    );
     fireEvent.click(screen.getByText("Feature A"));
     expect(screen.getByText(/problem statement/i)).toBeInTheDocument();
     expect(screen.getByText(/users struggle with this/i)).toBeInTheDocument();
@@ -51,6 +74,8 @@ describe("ProposalsSection", () => {
       <ProposalsSection
         proposals={[makeProposal("p1", "Feature A", { data_model_changes: [] })]}
         isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
       />
     );
     fireEvent.click(screen.getByText("Feature A"));
@@ -62,6 +87,8 @@ describe("ProposalsSection", () => {
       <ProposalsSection
         proposals={[makeProposal("p1", "Feature A", { data_model_changes: ["Add column"] })]}
         isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
       />
     );
     fireEvent.click(screen.getByText("Feature A"));
@@ -70,7 +97,14 @@ describe("ProposalsSection", () => {
   });
 
   it("shows stale notice when isStale is true", () => {
-    render(<ProposalsSection proposals={[makeProposal("p1", "F")]} isStale />);
+    render(
+      <ProposalsSection
+        proposals={[makeProposal("p1", "F")]}
+        isStale
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
+      />
+    );
     expect(screen.getByText(/re-analyze/i)).toBeInTheDocument();
   });
 
@@ -79,6 +113,8 @@ describe("ProposalsSection", () => {
       <ProposalsSection
         proposals={[makeProposal("p1", "Feature A"), makeProposal("p2", "Feature B")]}
         isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1", "p2")}
       />
     );
     expect(screen.getByText("1")).toBeInTheDocument();

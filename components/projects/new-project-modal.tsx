@@ -17,6 +17,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { createProject } from "@/app/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
+import type { LimitResult } from "@/lib/billing/limits";
 
 const CARD_TRANSITION = {
   type: "tween" as const,
@@ -30,13 +32,19 @@ const BACKDROP_TRANSITION = {
   ease: "easeOut" as const,
 };
 
-export function NewProjectModal() {
+interface NewProjectModalProps {
+  canCreate?: LimitResult;
+}
+
+export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: NewProjectModalProps) {
   const [open, setOpen] = useState(false);
   const isClient = useIsClient();
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>New Project</Button>
+      <PlanLimitTooltip allowed={canCreate.allowed} reason={canCreate.reason}>
+        <Button onClick={canCreate.allowed ? () => setOpen(true) : undefined}>New Project</Button>
+      </PlanLimitTooltip>
 
       {isClient && createPortal(
         <AnimatePresence>

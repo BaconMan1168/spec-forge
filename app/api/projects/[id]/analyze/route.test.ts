@@ -17,6 +17,10 @@ vi.mock("@/app/actions/analysis", () => ({
   countRecentRunsByUser: vi.fn().mockResolvedValue(0),
 }));
 
+vi.mock("@/lib/billing/limits", () => ({
+  canRerunAnalysis: vi.fn().mockResolvedValue({ allowed: true, reason: "" }),
+}));
+
 import { createClient } from "@/lib/supabase/server";
 import { synthesize } from "@/lib/ai/synthesize";
 import { generateProposals } from "@/lib/ai/generate-proposals";
@@ -50,6 +54,13 @@ const makeSupabase = () => ({
             data: [{ id: "f1", content: "feedback", source_type: "Interview" }],
             error: null,
           }),
+        }),
+      };
+    }
+    if (table === "insights") {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
         }),
       };
     }
@@ -118,6 +129,13 @@ describe("POST /api/projects/[id]/analyze", () => {
                   error: null,
                 }),
               }),
+            }),
+          };
+        }
+        if (table === "insights") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
             }),
           };
         }
