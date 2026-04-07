@@ -35,10 +35,11 @@ export function LoginForm() {
 
   async function handleGoogleSignIn() {
     const supabase = createClient();
+    const next = searchParams.get("next") ?? "/dashboard";
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }
