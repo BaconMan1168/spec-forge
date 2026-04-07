@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { createClient } from "@/lib/supabase/client";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIEWPORT = { once: true, margin: "0px 0px -10px 0px" } as const;
@@ -59,17 +61,58 @@ const MAX_FEATURES = [
   "Early access to new features",
 ];
 
-async function handleUpgrade(plan: "pro" | "max") {
-  const res = await fetch("/api/billing/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan }),
-  });
-  const body = await res.json();
-  if (body.url) window.location.href = body.url;
-}
-
 export default function PricingPage() {
+  const [loading, setLoading] = useState<"pro" | "max" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleUpgrade(plan: "pro" | "max") {
+    setError(null);
+    setLoading(plan);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = "/login?next=/pricing";
+        return;
+      }
+
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      const text = await res.text();
+      let body: { url?: string; error?: { message?: string } } = {};
+      try {
+        body = JSON.parse(text);
+      } catch {
+        setError(`Unexpected server response (${res.status}). Please try again.`);
+        return;
+      }
+
+      if (!res.ok) {
+        setError(body.error?.message ?? `Something went wrong (${res.status}). Please try again.`);
+        return;
+      }
+
+      if (body.url) {
+        window.location.href = body.url;
+      }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const buttonClass =
+    "group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow,opacity] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)] disabled:cursor-not-allowed disabled:opacity-60";
+
   return (
     <main className="relative z-10 mx-auto max-w-[1200px] px-16 pb-[120px] pt-[160px]">
       <div className="mb-[80px] text-center">
@@ -83,6 +126,12 @@ export default function PricingPage() {
           Start free. Upgrade when you&apos;re ready.
         </p>
       </div>
+
+      {error && (
+        <div className="mb-8 rounded-[var(--radius-md)] border border-[var(--color-error,#f87171)]/30 bg-[var(--color-error,#f87171)]/10 px-5 py-3 text-center text-[14px] text-[var(--color-error,#f87171)]">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-col items-center justify-center gap-8 md:flex-row md:items-stretch">
         {/* Free card */}
@@ -154,12 +203,15 @@ export default function PricingPage() {
             <div className="mt-auto">
               <button
                 onClick={() => handleUpgrade("pro")}
-                className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+                disabled={loading !== null}
+                className={buttonClass}
               >
-                Upgrade to Pro
-                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                  →
-                </span>
+                {loading === "pro" ? "Redirecting…" : "Upgrade to Pro"}
+                {loading !== "pro" && (
+                  <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                    →
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -194,12 +246,15 @@ export default function PricingPage() {
             <div className="mt-auto">
               <button
                 onClick={() => handleUpgrade("max")}
-                className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+                disabled={loading !== null}
+                className={buttonClass}
               >
-                Upgrade to Max
-                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                  →
-                </span>
+                {loading === "max" ? "Redirecting…" : "Upgrade to Max"}
+                {loading !== "max" && (
+                  <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                    →
+                  </span>
+                )}
               </button>
             </div>
           </div>
