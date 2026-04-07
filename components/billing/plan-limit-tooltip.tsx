@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import React from "react";
 
@@ -12,8 +12,19 @@ interface PlanLimitTooltipProps {
 
 export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltipProps) {
   const [visible, setVisible] = useState(false);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (allowed) return <>{children}</>;
+
+  function show() {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setVisible(true);
+  }
+
+  function hide() {
+    // Delay hiding so the user can move their cursor into the tooltip
+    hideTimer.current = setTimeout(() => setVisible(false), 300);
+  }
 
   const disabledChild = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
@@ -36,13 +47,15 @@ export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltip
   return (
     <div
       className="relative inline-block"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
+      onMouseEnter={show}
+      onMouseLeave={hide}
     >
       {disabledChild}
       {/* Reason text is always in the DOM (sr-only when not hovered) so tests can find it */}
       <div
         role="tooltip"
+        onMouseEnter={show}
+        onMouseLeave={hide}
         className={
           visible
             ? "absolute bottom-[calc(100%+8px)] right-0 z-50 w-[220px] rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-3.5 py-2.5 shadow-[var(--shadow-2)]"

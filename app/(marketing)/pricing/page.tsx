@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
@@ -61,9 +62,37 @@ const MAX_FEATURES = [
   "Early access to new features",
 ];
 
+const PLAN_RANK: Record<"free" | "pro" | "max", number> = { free: 0, pro: 1, max: 2 };
+
 export default function PricingPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState<"pro" | "max" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<"free" | "pro" | "max" | null>(null);
+  const autoCheckoutFired = useRef(false);
+
+  // Fetch the current user's plan for plan-aware button states
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        setUserPlan(null);
+        return;
+      }
+      supabase
+        .from("profiles")
+        .select("subscription_status, subscription_plan")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.subscription_status === "active") {
+            setUserPlan(data.subscription_plan === "max" ? "max" : "pro");
+          } else {
+            setUserPlan("free");
+          }
+        });
+    });
+  }, []);
 
   async function handleUpgrade(plan: "pro" | "max") {
     setError(null);
@@ -76,7 +105,7 @@ export default function PricingPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        window.location.href = "/login?next=/pricing";
+        window.location.href = `/login?next=${encodeURIComponent(`/pricing?autoCheckout=${plan}`)}`;
         return;
       }
 
@@ -110,8 +139,86 @@ export default function PricingPage() {
     }
   }
 
-  const buttonClass =
+  // Auto-trigger checkout when redirected back from login with ?autoCheckout=
+  useEffect(() => {
+    if (autoCheckoutFired.current) return;
+    const plan = searchParams.get("autoCheckout") as "pro" | "max" | null;
+    if (plan === "pro" || plan === "max") {
+      autoCheckoutFired.current = true;
+      handleUpgrade(plan);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const upgradeButtonClass =
     "group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow,opacity] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)] disabled:cursor-not-allowed disabled:opacity-60";
+  const currentPlanButtonClass =
+    "inline-flex w-full cursor-default items-center justify-center rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-text-secondary)] opacity-70";
+
+  function renderFreeButton() {
+    if (userPlan === null) {
+      // Not logged in — show Try for Free
+      return (
+        <Link
+          href="/login"
+          className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+        >
+          Try for Free
+          <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+            →
+          </span>
+        </Link>
+      );
+    }
+    if (userPlan === "free") {
+      return <span className={currentPlanButtonClass}>Current Plan</span>;
+    }
+    // pro or max — they've surpassed this tier
+    return <span className={currentPlanButtonClass}>Included in your plan</span>;
+  }
+
+  function renderProButton() {
+    if (userPlan === "pro") {
+      return <span className={currentPlanButtonClass}>Current Plan</span>;
+    }
+    if (userPlan === "max") {
+      return <span className={currentPlanButtonClass}>Included in Max</span>;
+    }
+    return (
+      <button
+        onClick={() => handleUpgrade("pro")}
+        disabled={loading !== null}
+        className={upgradeButtonClass}
+      >
+        {loading === "pro" ? "Redirecting…" : "Upgrade to Pro"}
+        {loading !== "pro" && (
+          <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+            →
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  function renderMaxButton() {
+    if (userPlan === "max") {
+      return <span className={currentPlanButtonClass}>Current Plan</span>;
+    }
+    return (
+      <button
+        onClick={() => handleUpgrade("max")}
+        disabled={loading !== null || (userPlan !== null && PLAN_RANK[userPlan] >= PLAN_RANK["max"])}
+        className={upgradeButtonClass}
+      >
+        {loading === "max" ? "Redirecting…" : "Upgrade to Max"}
+        {loading !== "max" && (
+          <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+            →
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <main className="relative z-10 mx-auto max-w-[1200px] px-16 pb-[120px] pt-[160px]">
@@ -160,17 +267,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-auto">
-              <Link
-                href="/login"
-                className="group inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[16px] text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
-              >
-                Try for Free
-                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                  →
-                </span>
-              </Link>
-            </div>
+            <div className="mt-auto">{renderFreeButton()}</div>
           </div>
         </motion.div>
 
@@ -200,20 +297,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-auto">
-              <button
-                onClick={() => handleUpgrade("pro")}
-                disabled={loading !== null}
-                className={buttonClass}
-              >
-                {loading === "pro" ? "Redirecting…" : "Upgrade to Pro"}
-                {loading !== "pro" && (
-                  <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                    →
-                  </span>
-                )}
-              </button>
-            </div>
+            <div className="mt-auto">{renderProButton()}</div>
           </div>
         </motion.div>
 
@@ -243,20 +327,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-auto">
-              <button
-                onClick={() => handleUpgrade("max")}
-                disabled={loading !== null}
-                className={buttonClass}
-              >
-                {loading === "max" ? "Redirecting…" : "Upgrade to Max"}
-                {loading !== "max" && (
-                  <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                    →
-                  </span>
-                )}
-              </button>
-            </div>
+            <div className="mt-auto">{renderMaxButton()}</div>
           </div>
         </motion.div>
       </div>

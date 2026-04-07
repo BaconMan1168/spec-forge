@@ -35,6 +35,25 @@ vi.mock("next/link", () => ({
   }) => <a href={href} className={className}>{children}</a>,
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => ({
+    get: () => null,
+  }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: null } }),
+      getSession: () => Promise.resolve({ data: { session: null } }),
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }),
+    }),
+  }),
+}));
+
 import PricingPage from "./page";
 
 describe("PricingPage", () => {

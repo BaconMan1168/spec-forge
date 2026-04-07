@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { canCreateProject } from "@/lib/billing/limits";
 
 export async function createProject(formData: FormData) {
@@ -34,4 +35,23 @@ export async function createProject(formData: FormData) {
   }
 
   redirect(`/projects/${data.id}`);
+}
+
+export async function deleteProject(projectId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("user_id", user.id); // only delete own projects
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
 }

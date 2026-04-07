@@ -1,17 +1,30 @@
 // app/(app)/dashboard/page.tsx
 import { createClient } from "@/lib/supabase/server";
 import { canCreateProject } from "@/lib/billing/limits";
+import { syncCheckoutSession } from "@/lib/billing/sync-checkout";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
 import { ProjectTile } from "@/components/projects/project-tile";
 import { BlurFade } from "@/components/ui/blur-fade";
 import type { Project } from "@/lib/types/database";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string; session_id?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
   const [{ data: projects }, { data: { user } }] = await Promise.all([
     supabase.from("projects").select("*").order("created_at", { ascending: false }),
     supabase.auth.getUser(),
   ]);
+
+  // Post-checkout sync: if Stripe redirected here with a session_id, sync
+  // subscription directly from Stripe in case the webhook failed.
+  let checkoutSuccess = false;
+  if (params.checkout === "success" && params.session_id && user) {
+    checkoutSuccess = await syncCheckoutSession(params.session_id, user.id);
+  }
 
   const canCreate = user
     ? await canCreateProject(user.id)
@@ -19,6 +32,18 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* Post-checkout success banner */}
+      {checkoutSuccess && (
+        <BlurFade delay={0} duration={0.28}>
+          <div className="mb-6 flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-accent-primary)]/30 bg-[var(--color-accent-muted)] px-5 py-3.5">
+            <span className="text-[var(--color-accent-primary)]">✓</span>
+            <p className="text-[14px] font-medium text-[var(--color-text-primary)]">
+              Your subscription is now active — welcome to Pro!
+            </p>
+          </div>
+        </BlurFade>
+      )}
+
       {/* Header row */}
       <div className="mb-8 flex items-center justify-between">
         <BlurFade delay={0} duration={0.28}>
@@ -50,7 +75,7 @@ export default async function DashboardPage() {
               id={project.id}
               name={project.name}
               createdAt={project.created_at}
-              index={index + 2} // +2 so first tile = delay 0.08s (heading=0, button=0.04, tile[0]=0.08, ...)
+              index={index + 2}
             />
           ))}
         </div>
