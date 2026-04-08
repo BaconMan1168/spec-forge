@@ -21,7 +21,7 @@ export async function createCheckoutSession({
     customer: stripeCustomerId ?? undefined,
     customer_email: stripeCustomerId ? undefined : userEmail,
     line_items: [{ price: PLANS[plan].stripePriceId, quantity: 1 }],
-    success_url: `${returnUrl}/dashboard?checkout=success`,
+    success_url: `${returnUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${returnUrl}/pricing`,
     metadata: { userId, plan },
     subscription_data: { metadata: { userId, plan } },

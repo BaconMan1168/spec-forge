@@ -17,7 +17,7 @@ export function Navbar({ userEmail }: NavbarProps) {
         {/* Left: brand + conditional breadcrumb — overflow-hidden here for truncation */}
         <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex flex-shrink-0 items-center gap-2"
           >
             <SpecForgeLogo />
