@@ -13,7 +13,7 @@ const REVEAL_UP = (delay = 0) => ({
   transition: { duration: 1.2, delay, ease: EASE },
 });
 
-export function CtaSection() {
+export function CtaSection({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   return (
     <>
       {/* Final CTA */}
@@ -43,21 +43,35 @@ export function CtaSection() {
           {...REVEAL_UP(0.6)}
           className="relative flex items-center justify-center gap-4"
         >
-          <Link
-            href="/login"
-            className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
-          >
-            Start for Free
-            <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-              →
-            </span>
-          </Link>
-          <Link
-            href="/login"
-            className="inline-flex cursor-pointer items-center rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-8 py-[18px] text-[17px] font-medium text-[var(--color-text-secondary)] transition-[background-color,border-color,color] duration-[180ms] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-1)] hover:text-[var(--color-text-primary)]"
-          >
-            Sign In
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+            >
+              Go to Dashboard
+              <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                →
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+              >
+                Start for Free
+                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                  →
+                </span>
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex cursor-pointer items-center rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-8 py-[18px] text-[17px] font-medium text-[var(--color-text-secondary)] transition-[background-color,border-color,color] duration-[180ms] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-1)] hover:text-[var(--color-text-primary)]"
+              >
+                Sign In
+              </Link>
+            </>
+          )}
         </motion.div>
       </section>
 

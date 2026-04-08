@@ -2,49 +2,39 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import { PlanCard } from "./page";
+import { SubscriptionActions } from "@/components/billing/subscription-actions";
 
-describe("PlanCard (Free view)", () => {
-  it("shows upgrade CTA for free user", () => {
-    render(
-      <PlanCard
-        plan="free"
-        projectsThisMonth={1}
-        stripeCustomerId={null}
-      />
-    );
+describe("SubscriptionActions (Free view)", () => {
+  it("shows view plans CTA for free user", () => {
+    render(<SubscriptionActions plan="free" cancelAt={null} />);
     expect(screen.getByText(/view plans/i)).toBeInTheDocument();
-    expect(screen.getByText("1 / 2")).toBeInTheDocument();
-    expect(screen.getByText(/Free/)).toBeInTheDocument();
   });
 });
 
-describe("PlanCard (Pro view)", () => {
-  it("shows manage subscription for pro user", () => {
-    render(
-      <PlanCard
-        plan="pro"
-        projectsThisMonth={7}
-        stripeCustomerId="cus_123"
-      />
-    );
-    expect(screen.getByText(/manage subscription/i)).toBeInTheDocument();
-    expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(screen.getByText("7 / 20")).toBeInTheDocument();
+describe("SubscriptionActions (Pro view)", () => {
+  it("shows upgrade to max and cancel buttons", () => {
+    render(<SubscriptionActions plan="pro" cancelAt={null} />);
+    expect(screen.getByText(/upgrade to max/i)).toBeInTheDocument();
+    expect(screen.getByText(/cancel subscription/i)).toBeInTheDocument();
+  });
+
+  it("shows cancels-on message when pending cancellation", () => {
+    render(<SubscriptionActions plan="pro" cancelAt="2026-05-01T00:00:00Z" />);
+    expect(screen.getByText(/cancels on/i)).toBeInTheDocument();
+    expect(screen.queryByText(/cancel subscription/i)).not.toBeInTheDocument();
   });
 });
 
-describe("PlanCard (Max view)", () => {
-  it("shows manage subscription for max user", () => {
-    render(
-      <PlanCard
-        plan="max"
-        projectsThisMonth={42}
-        stripeCustomerId="cus_456"
-      />
-    );
-    expect(screen.getByText(/manage subscription/i)).toBeInTheDocument();
-    expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(screen.getByText("42")).toBeInTheDocument();
+describe("SubscriptionActions (Max view)", () => {
+  it("shows all features unlocked and cancel button", () => {
+    render(<SubscriptionActions plan="max" cancelAt={null} />);
+    expect(screen.getByText(/all features unlocked/i)).toBeInTheDocument();
+    expect(screen.getByText(/cancel subscription/i)).toBeInTheDocument();
+  });
+
+  it("shows cancels-on message when pending cancellation", () => {
+    render(<SubscriptionActions plan="max" cancelAt="2026-05-01T00:00:00Z" />);
+    expect(screen.getByText(/cancels on/i)).toBeInTheDocument();
+    expect(screen.queryByText(/cancel subscription/i)).not.toBeInTheDocument();
   });
 });

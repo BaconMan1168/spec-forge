@@ -109,7 +109,12 @@ export default function PricingPage() {
         return;
       }
 
-      const res = await fetch("/api/billing/checkout", {
+      // Pro users upgrading to Max use the upgrade endpoint (Stripe portal confirm flow).
+      // New subscribers (free or unauthenticated) use the checkout endpoint.
+      const isUpgrade = userPlan === "pro" && plan === "max";
+      const endpoint = isUpgrade ? "/api/billing/upgrade" : "/api/billing/checkout";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
@@ -207,7 +212,7 @@ export default function PricingPage() {
     return (
       <button
         onClick={() => handleUpgrade("max")}
-        disabled={loading !== null || (userPlan !== null && PLAN_RANK[userPlan] >= PLAN_RANK["max"])}
+        disabled={loading !== null}
         className={upgradeButtonClass}
       >
         {loading === "max" ? "Redirecting…" : "Upgrade to Max"}

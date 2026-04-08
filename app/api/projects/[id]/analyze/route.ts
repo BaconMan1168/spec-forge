@@ -5,7 +5,7 @@ import {
   persistAnalysisResults,
   countRecentRunsByUser,
 } from "@/app/actions/analysis";
-import { canRerunAnalysis } from "@/lib/billing/limits";
+import { canAnalyzeProject } from "@/lib/billing/limits";
 
 export const maxDuration = 60;
 
@@ -43,20 +43,14 @@ export async function POST(
     );
   }
 
-  // 3. Re-run billing check (block free users from re-running analysis)
-  const { count: insightCount } = await supabase
-    .from("insights")
-    .select("id", { count: "exact", head: true })
-    .eq("project_id", projectId);
-
-  if ((insightCount ?? 0) > 0) {
-    const rerunLimit = await canRerunAnalysis(user.id);
-    if (!rerunLimit.allowed) {
-      return Response.json(
-        { error: { code: "PLAN_LIMIT", message: rerunLimit.reason } },
-        { status: 403 }
-      );
-    }
+  // 3. Billing check — covers both first-time analysis and re-runs.
+  //    Accounts for deleted-and-recreated projects to prevent slot abuse.
+  const analysisLimit = await canAnalyzeProject(user.id, projectId);
+  if (!analysisLimit.allowed) {
+    return Response.json(
+      { error: { code: "PLAN_LIMIT", message: analysisLimit.reason } },
+      { status: 403 }
+    );
   }
 
   // 4. Rate limit check

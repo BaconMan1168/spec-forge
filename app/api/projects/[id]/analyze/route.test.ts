@@ -18,7 +18,7 @@ vi.mock("@/app/actions/analysis", () => ({
 }));
 
 vi.mock("@/lib/billing/limits", () => ({
-  canRerunAnalysis: vi.fn().mockResolvedValue({ allowed: true, reason: "" }),
+  canAnalyzeProject: vi.fn().mockResolvedValue({ allowed: true, reason: "" }),
 }));
 
 import { createClient } from "@/lib/supabase/server";

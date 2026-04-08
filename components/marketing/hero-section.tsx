@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export function HeroSection() {
+export function HeroSection({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   return (
     <section className="relative z-10 mx-auto min-h-screen max-w-[1200px] px-16 pb-[120px] pt-[160px] flex items-center">
       {/* Subtle radial tint behind text */}
@@ -66,16 +66,28 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-shrink-0 items-center gap-3.5">
-            {/* Start for Free — expanding arrow */}
-            <Link
-              href="/login"
-              className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
-            >
-              Start for Free
-              <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
-                →
-              </span>
-            </Link>
+            {/* Authenticated users go straight to dashboard; guests see Start for Free */}
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+              >
+                Go to Dashboard
+                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                  →
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="group inline-flex cursor-pointer items-center overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-9 py-[18px] text-[17px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
+              >
+                Start for Free
+                <span className="ml-0 inline-block max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,margin-left] duration-[300ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[1.5em] group-hover:opacity-100">
+                  →
+                </span>
+              </Link>
+            )}
 
             {/* See How It Works — scroll anchor */}
             <Link

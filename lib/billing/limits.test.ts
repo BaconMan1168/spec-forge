@@ -96,7 +96,9 @@ describe("canCreateProject", () => {
     expect(result.allowed).toBe(true);
   });
 
-  it("allows pro user with 19 projects this month", async () => {
+  it("allows pro user with 19 analyzed projects this month", async () => {
+    // 19 distinct analyzed project IDs, 0 live unanalyzed → total 19 < 20
+    const analyzedIds = Array.from({ length: 19 }, (_, i) => ({ project_id: `p${i}` }));
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -104,18 +106,29 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  data: { subscription_status: "active", subscription_plan: "pro", subscription_period_start: null },
                   error: null,
                 }),
               })),
             })),
           };
         }
+        if (table === "analysis_runs") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                gte: vi.fn().mockResolvedValue({ data: analyzedIds, error: null }),
+              })),
+            })),
+          };
+        }
+        // projects table: all 19 are analyzed, so unanalyzed live = 0
         return {
           select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              gte: vi.fn().mockResolvedValue({ count: 19, error: null }),
-            })),
+            eq: vi.fn().mockResolvedValue({
+              data: analyzedIds.map((r) => ({ id: r.project_id })),
+              error: null,
+            }),
           })),
         };
       }),
@@ -125,7 +138,9 @@ describe("canCreateProject", () => {
     expect(result.allowed).toBe(true);
   });
 
-  it("blocks pro user at 20 projects this month", async () => {
+  it("blocks pro user at 20 analyzed projects this month", async () => {
+    // 20 distinct analyzed project IDs → at limit, block creation
+    const analyzedIds = Array.from({ length: 20 }, (_, i) => ({ project_id: `p${i}` }));
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -133,20 +148,23 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: "active", subscription_plan: "pro" },
+                  data: { subscription_status: "active", subscription_plan: "pro", subscription_period_start: null },
                   error: null,
                 }),
               })),
             })),
           };
         }
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              gte: vi.fn().mockResolvedValue({ count: 20, error: null }),
+        if (table === "analysis_runs") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                gte: vi.fn().mockResolvedValue({ data: analyzedIds, error: null }),
+              })),
             })),
-          })),
-        };
+          };
+        }
+        return { select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) })) };
       }),
     };
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
@@ -155,7 +173,7 @@ describe("canCreateProject", () => {
     expect(result.reason).toMatch(/monthly limit/i);
   });
 
-  it("allows free user with 1 project this month", async () => {
+  it("allows free user with 1 analyzed project this month", async () => {
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -163,18 +181,26 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null, subscription_plan: null },
+                  data: { subscription_status: null, subscription_plan: null, subscription_period_start: null },
                   error: null,
                 }),
               })),
             })),
           };
         }
+        if (table === "analysis_runs") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                gte: vi.fn().mockResolvedValue({ data: [{ project_id: "p1" }], error: null }),
+              })),
+            })),
+          };
+        }
+        // live projects: only p1, which is analyzed → unanalyzed live = 0, total = 1
         return {
           select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              gte: vi.fn().mockResolvedValue({ count: 1, error: null }),
-            })),
+            eq: vi.fn().mockResolvedValue({ data: [{ id: "p1" }], error: null }),
           })),
         };
       }),
@@ -184,7 +210,8 @@ describe("canCreateProject", () => {
     expect(result.allowed).toBe(true);
   });
 
-  it("blocks free user with 2 projects this month", async () => {
+  it("blocks free user with 2 analyzed projects this month", async () => {
+    const analyzedIds = [{ project_id: "p1" }, { project_id: "p2" }];
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "profiles") {
@@ -192,20 +219,23 @@ describe("canCreateProject", () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
-                  data: { subscription_status: null, subscription_plan: null },
+                  data: { subscription_status: null, subscription_plan: null, subscription_period_start: null },
                   error: null,
                 }),
               })),
             })),
           };
         }
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              gte: vi.fn().mockResolvedValue({ count: 2, error: null }),
+        if (table === "analysis_runs") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                gte: vi.fn().mockResolvedValue({ data: analyzedIds, error: null }),
+              })),
             })),
-          })),
-        };
+          };
+        }
+        return { select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) })) };
       }),
     };
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);

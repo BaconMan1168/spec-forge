@@ -1,6 +1,20 @@
 import Stripe from "stripe";
 import { getStripe } from "@/lib/billing/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
+import { PLANS } from "@/lib/billing/config";
+
+// Stripe v20 removed current_period_* from TS types but the REST API still
+// returns them. We use this helper to access them safely.
+interface StripeSubscriptionWithPeriod extends Stripe.Subscription {
+  current_period_start: number;
+  current_period_end: number;
+}
+
+function planFromPriceId(priceId: string): "pro" | "max" | null {
+  if (priceId === PLANS.pro.stripePriceId) return "pro";
+  if (priceId === PLANS.max.stripePriceId) return "max";
+  return null;
+}
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -39,31 +53,46 @@ export async function POST(request: Request) {
       const userId = session.metadata?.userId;
       const plan = session.metadata?.plan === "max" ? "max" : "pro";
       if (!userId || !session.customer || !session.subscription) break;
+
+      // Retrieve subscription to get period dates
+      const subscription = await stripe.subscriptions.retrieve(
+        session.subscription as string
+      ) as unknown as StripeSubscriptionWithPeriod;
+
       await supabase.from("profiles").upsert({
         id: userId,
         stripe_customer_id: session.customer as string,
-        stripe_subscription_id: session.subscription as string,
+        stripe_subscription_id: subscription.id,
         subscription_status: "active",
         subscription_plan: plan,
+        subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_cancel_at: null,
         updated_at: new Date().toISOString(),
       });
       break;
     }
 
     case "customer.subscription.updated": {
-      const subscription = event.data.object as Stripe.Subscription;
+      const subscription = event.data.object as unknown as StripeSubscriptionWithPeriod;
       const userId = subscription.metadata?.userId;
       if (!userId) break;
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("subscription_status")
-        .eq("id", userId)
-        .single();
-      if (existing?.subscription_status === subscription.status) break;
+
+      const priceId = subscription.items.data[0]?.price?.id ?? "";
+      const plan = planFromPriceId(priceId);
+
+      const cancelAt = subscription.cancel_at_period_end
+        ? new Date(subscription.current_period_end * 1000).toISOString()
+        : null;
+
       await supabase
         .from("profiles")
         .update({
           subscription_status: subscription.status,
+          ...(plan !== null ? { subscription_plan: plan } : {}),
+          subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          subscription_cancel_at: cancelAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
@@ -80,6 +109,9 @@ export async function POST(request: Request) {
           stripe_subscription_id: null,
           subscription_status: "canceled",
           subscription_plan: null,
+          subscription_period_start: null,
+          subscription_period_end: null,
+          subscription_cancel_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
