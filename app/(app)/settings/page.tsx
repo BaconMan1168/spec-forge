@@ -1,11 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-
-interface PlanCardProps {
-  plan: "free" | "pro" | "max";
-  projectsThisMonth: number;
-  stripeCustomerId: string | null;
-}
+import { SubscriptionActions } from "@/components/billing/subscription-actions";
 
 const PLAN_LABELS: Record<"free" | "pro" | "max", string> = {
   free: "Free",
@@ -25,76 +20,6 @@ const PROJECT_LIMITS: Record<"free" | "pro" | "max", number | null> = {
   max: null,
 };
 
-export function PlanCard({ plan, projectsThisMonth }: PlanCardProps) {
-  const isPaid = plan === "pro" || plan === "max";
-  const limit = PROJECT_LIMITS[plan];
-
-  return (
-    <div className="rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-8">
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-        Current Plan
-      </p>
-
-      <div className="mb-1 flex items-center gap-3">
-        <span className="text-[22px] font-bold text-[var(--color-text-primary)]">
-          {PLAN_LABELS[plan]}
-        </span>
-        {isPaid && (
-          <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-accent-primary)]">
-            Active
-          </span>
-        )}
-      </div>
-
-      <p className="mb-6 text-[13px] text-[var(--color-text-tertiary)]">
-        {PLAN_DESCRIPTIONS[plan]}
-      </p>
-
-      <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] p-5">
-        <p className="mb-3 text-[12px] text-[var(--color-text-tertiary)]">This month</p>
-        <div className="flex gap-6">
-          <div>
-            <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-              {limit === null ? projectsThisMonth : `${projectsThisMonth} / ${limit}`}
-            </p>
-            <p className="text-[11px] text-[var(--color-text-tertiary)]">projects</p>
-          </div>
-        </div>
-      </div>
-
-      {isPaid ? (
-        <ManageSubscriptionButton />
-      ) : (
-        <UpgradeButton />
-      )}
-    </div>
-  );
-}
-
-function UpgradeButton() {
-  return (
-    <a
-      href="/pricing"
-      className="block w-full rounded-[var(--radius-pill)] bg-[var(--color-accent-primary)] px-8 py-[14px] text-center text-[15px] font-semibold text-[var(--color-bg-0)] transition-[background-color,box-shadow] duration-[180ms] hover:bg-[var(--color-accent-hover)] hover:shadow-[0_6px_20px_hsla(40,85%,58%,0.35)]"
-    >
-      View Plans — from $9/mo
-    </a>
-  );
-}
-
-function ManageSubscriptionButton() {
-  return (
-    <form action="/api/billing/portal" method="POST">
-      <button
-        type="submit"
-        className="w-full rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-transparent px-8 py-[14px] text-[15px] font-semibold text-[var(--color-text-secondary)] transition-colors duration-[180ms] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
-      >
-        Manage Subscription
-      </button>
-    </form>
-  );
-}
-
 export default async function SettingsPage() {
   const supabase = await createClient();
   const {
@@ -110,7 +35,9 @@ export default async function SettingsPage() {
   const [{ data: profile }, { count: projectCount }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("subscription_status, subscription_plan, stripe_customer_id")
+      .select(
+        "subscription_status, subscription_plan, stripe_customer_id, subscription_cancel_at"
+      )
       .eq("id", user.id)
       .single(),
     supabase
@@ -126,18 +53,57 @@ export default async function SettingsPage() {
       : profile?.subscription_plan === "max"
         ? "max"
         : "pro";
+
   const projectsThisMonth = projectCount ?? 0;
+  const limit = PROJECT_LIMITS[plan];
+  const cancelAt: string | null = profile?.subscription_cancel_at ?? null;
+  const isPaid = plan === "pro" || plan === "max";
 
   return (
     <div className="mx-auto max-w-[480px]">
       <h1 className="mb-8 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
         Settings
       </h1>
-      <PlanCard
-        plan={plan}
-        projectsThisMonth={projectsThisMonth}
-        stripeCustomerId={profile?.stripe_customer_id ?? null}
-      />
+
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-8">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+          Current Plan
+        </p>
+
+        <div className="mb-1 flex items-center gap-3">
+          <span className="text-[22px] font-bold text-[var(--color-text-primary)]">
+            {PLAN_LABELS[plan]}
+          </span>
+          {isPaid && !cancelAt && (
+            <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-accent-primary)]">
+              Active
+            </span>
+          )}
+          {isPaid && cancelAt && (
+            <span className="rounded-[var(--radius-pill)] bg-[var(--color-error,#f87171)]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-error,#f87171)]">
+              Canceling
+            </span>
+          )}
+        </div>
+
+        <p className="mb-6 text-[13px] text-[var(--color-text-tertiary)]">
+          {PLAN_DESCRIPTIONS[plan]}
+        </p>
+
+        <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] p-5">
+          <p className="mb-3 text-[12px] text-[var(--color-text-tertiary)]">This month</p>
+          <div className="flex gap-6">
+            <div>
+              <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">
+                {limit === null ? projectsThisMonth : `${projectsThisMonth} / ${limit}`}
+              </p>
+              <p className="text-[11px] text-[var(--color-text-tertiary)]">projects</p>
+            </div>
+          </div>
+        </div>
+
+        <SubscriptionActions plan={plan} cancelAt={cancelAt} />
+      </div>
     </div>
   );
 }

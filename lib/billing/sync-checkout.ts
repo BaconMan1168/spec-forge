@@ -20,7 +20,11 @@ export async function syncCheckoutSession(
     if (session.payment_status !== "paid") return false;
     if (!session.customer || !session.subscription) return false;
 
-    const subscription = session.subscription as Stripe.Subscription;
+    // Stripe v20 types omit current_period_* — cast to access the API fields
+    const subscription = session.subscription as Stripe.Subscription & {
+      current_period_start: number;
+      current_period_end: number;
+    };
     const plan = session.metadata?.plan === "max" ? "max" : "pro";
 
     const supabase = createServiceClient();
@@ -30,6 +34,9 @@ export async function syncCheckoutSession(
       stripe_subscription_id: subscription.id,
       subscription_status: "active",
       subscription_plan: plan,
+      subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_cancel_at: null,
       updated_at: new Date().toISOString(),
     });
 

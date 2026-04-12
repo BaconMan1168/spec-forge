@@ -2,6 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/billing/stripe", () => ({ getStripe: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
+vi.mock("@/lib/billing/config", () => ({
+  PLANS: {
+    pro: { stripePriceId: "price_pro_test" },
+    max: { stripePriceId: "price_max_test" },
+  },
+}));
 
 import { getStripe } from "@/lib/billing/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -19,18 +25,24 @@ const makeUpdate = vi.fn().mockReturnValue({
   eq: vi.fn().mockResolvedValue({ error: null }),
 });
 
-const makeServiceClient = (existingStatus: string | null = null) => ({
+const makeServiceClient = () => ({
   from: vi.fn(() => ({
     upsert: makeUpsert,
     update: makeUpdate,
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: vi
-          .fn()
-          .mockResolvedValue({ data: { subscription_status: existingStatus }, error: null }),
-      }),
-    }),
   })),
+});
+
+// Minimal subscription object with all fields our handler reads
+const makeSubscription = (overrides = {}) => ({
+  id: "sub_456",
+  status: "active",
+  metadata: { userId: "user-1" },
+  items: { data: [{ price: { id: "price_pro_test" } }] },
+  cancel_at_period_end: false,
+  cancel_at: null,
+  current_period_start: 1700000000,
+  current_period_end: 1702592000,
+  ...overrides,
 });
 
 beforeEach(() => {
@@ -67,53 +79,59 @@ describe("POST /api/billing/webhook", () => {
           type: "checkout.session.completed",
           data: {
             object: {
-              metadata: { userId: "user-1" },
+              metadata: { userId: "user-1", plan: "pro" },
               customer: "cus_123",
               subscription: "sub_456",
             },
           },
         }),
       },
+      subscriptions: {
+        retrieve: vi.fn().mockResolvedValue(makeSubscription()),
+      },
     });
     const res = await POST(makeRequest("{}", "valid-sig"));
     expect(res.status).toBe(200);
     expect(mockClient.from).toHaveBeenCalledWith("profiles");
+    expect(makeUpsert).toHaveBeenCalled();
   });
 
-  it("skips DB write on customer.subscription.updated when status is unchanged", async () => {
-    const localUpdate = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
-    const mockClient = {
-      from: vi.fn(() => ({
-        upsert: makeUpsert,
-        update: localUpdate,
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: { subscription_status: "active" },
-              error: null,
-            }),
-          }),
+  it("updates profile on customer.subscription.updated", async () => {
+    const mockClient = makeServiceClient();
+    (createServiceClient as ReturnType<typeof vi.fn>).mockReturnValue(mockClient);
+    (getStripe as ReturnType<typeof vi.fn>).mockReturnValue({
+      webhooks: {
+        constructEvent: vi.fn().mockReturnValue({
+          type: "customer.subscription.updated",
+          data: { object: makeSubscription() },
         }),
-      })),
-    };
+      },
+    });
+    const res = await POST(makeRequest("{}", "valid-sig"));
+    expect(res.status).toBe(200);
+    expect(makeUpdate).toHaveBeenCalled();
+  });
+
+  it("sets subscription_cancel_at when cancel_at_period_end is true", async () => {
+    const mockClient = makeServiceClient();
     (createServiceClient as ReturnType<typeof vi.fn>).mockReturnValue(mockClient);
     (getStripe as ReturnType<typeof vi.fn>).mockReturnValue({
       webhooks: {
         constructEvent: vi.fn().mockReturnValue({
           type: "customer.subscription.updated",
           data: {
-            object: {
-              id: "sub_456",
-              status: "active",
-              metadata: { userId: "user-1" },
-            },
+            object: makeSubscription({
+              cancel_at_period_end: true,
+              current_period_end: 1702592000,
+            }),
           },
         }),
       },
     });
     const res = await POST(makeRequest("{}", "valid-sig"));
     expect(res.status).toBe(200);
-    expect(localUpdate).not.toHaveBeenCalled();
+    const updateCall = makeUpdate.mock.calls[0]?.[0];
+    expect(updateCall?.subscription_cancel_at).toBeTruthy();
   });
 
   it("returns 200 with received:true for unhandled event types", async () => {
