@@ -33,15 +33,22 @@ const makeServiceClient = () => ({
 });
 
 // Minimal subscription object with all fields our handler reads
-const makeSubscription = (overrides = {}) => ({
+const makeSubscription = (overrides: Record<string, unknown> = {}) => ({
   id: "sub_456",
   status: "active",
   metadata: { userId: "user-1" },
-  items: { data: [{ price: { id: "price_pro_test" } }] },
+  items: {
+    data: [
+      {
+        price: { id: "price_pro_test" },
+        current_period_start: 1700000000,
+        current_period_end: 1702592000,
+        ...(overrides.item as Record<string, unknown> ?? {}),
+      },
+    ],
+  },
   cancel_at_period_end: false,
   cancel_at: null,
-  current_period_start: 1700000000,
-  current_period_end: 1702592000,
   ...overrides,
 });
 
@@ -122,7 +129,6 @@ describe("POST /api/billing/webhook", () => {
           data: {
             object: makeSubscription({
               cancel_at_period_end: true,
-              current_period_end: 1702592000,
             }),
           },
         }),
