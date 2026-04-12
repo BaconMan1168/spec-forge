@@ -72,10 +72,10 @@ export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltip
             aria-hidden="true"
             onMouseEnter={show}
             onMouseLeave={hide}
-            className="absolute left-0 top-[calc(100%+8px)] z-50 w-[220px] rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-3.5 py-2.5 shadow-[var(--shadow-2)]"
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            className="absolute right-[calc(100%+8px)] top-1/2 -translate-y-1/2 z-50 w-[220px] rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-3.5 py-2.5 shadow-[var(--shadow-2)]"
+            initial={{ opacity: 0, scale: 0.95, x: 4 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.95, x: 4 }}
             transition={TOOLTIP_TRANSITION}
           >
             <p className="mb-1 text-[12px] font-semibold text-[var(--color-text-primary)]">

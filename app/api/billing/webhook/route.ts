@@ -3,13 +3,6 @@ import { getStripe } from "@/lib/billing/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS } from "@/lib/billing/config";
 
-// Stripe v20 removed current_period_* from TS types but the REST API still
-// returns them. We use this helper to access them safely.
-interface StripeSubscriptionWithPeriod extends Stripe.Subscription {
-  current_period_start: number;
-  current_period_end: number;
-}
-
 function planFromPriceId(priceId: string): "pro" | "max" | null {
   if (priceId === PLANS.pro.stripePriceId) return "pro";
   if (priceId === PLANS.max.stripePriceId) return "max";
@@ -57,16 +50,21 @@ export async function POST(request: Request) {
       // Retrieve subscription to get period dates
       const subscription = await stripe.subscriptions.retrieve(
         session.subscription as string
-      ) as unknown as StripeSubscriptionWithPeriod;
+      );
 
+      const item = subscription.items.data[0];
       await supabase.from("profiles").upsert({
         id: userId,
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: subscription.id,
         subscription_status: "active",
         subscription_plan: plan,
-        subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_period_start: item?.current_period_start
+          ? new Date(item.current_period_start * 1000).toISOString()
+          : null,
+        subscription_period_end: item?.current_period_end
+          ? new Date(item.current_period_end * 1000).toISOString()
+          : null,
         subscription_cancel_at: null,
         updated_at: new Date().toISOString(),
       });
@@ -74,15 +72,17 @@ export async function POST(request: Request) {
     }
 
     case "customer.subscription.updated": {
-      const subscription = event.data.object as unknown as StripeSubscriptionWithPeriod;
+      const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata?.userId;
       if (!userId) break;
 
-      const priceId = subscription.items.data[0]?.price?.id ?? "";
+      const item = subscription.items.data[0];
+      const priceId = item?.price?.id ?? "";
       const plan = planFromPriceId(priceId);
 
-      const cancelAt = subscription.cancel_at_period_end
-        ? new Date(subscription.current_period_end * 1000).toISOString()
+      const periodEnd = item?.current_period_end;
+      const cancelAt = subscription.cancel_at_period_end && periodEnd
+        ? new Date(periodEnd * 1000).toISOString()
         : null;
 
       await supabase
@@ -90,8 +90,12 @@ export async function POST(request: Request) {
         .update({
           subscription_status: subscription.status,
           ...(plan !== null ? { subscription_plan: plan } : {}),
-          subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          subscription_period_start: item?.current_period_start
+            ? new Date(item.current_period_start * 1000).toISOString()
+            : null,
+          subscription_period_end: periodEnd
+            ? new Date(periodEnd * 1000).toISOString()
+            : null,
           subscription_cancel_at: cancelAt,
           updated_at: new Date().toISOString(),
         })
