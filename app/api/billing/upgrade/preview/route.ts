@@ -56,8 +56,16 @@ export async function GET() {
       },
     });
 
+    const proratedAmountCents = preview.lines.data
+      .filter(
+        (line) =>
+          line.parent?.invoice_item_details?.proration === true ||
+          line.parent?.subscription_item_details?.proration === true
+      )
+      .reduce((sum, line) => sum + line.amount, 0);
+
     return Response.json({
-      amountDue: preview.amount_due,
+      amountDue: proratedAmountCents,
       currency: preview.currency,
     });
   } catch (err: unknown) {
