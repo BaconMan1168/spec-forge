@@ -1,8 +1,9 @@
 // components/projects/new-project-modal.tsx
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState, useTransition, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { Loader2 } from "lucide-react";
 
 // Returns false during SSR, true on the client — no useEffect/setState needed.
 // This avoids the react-compiler "setState in effect" lint error while still
@@ -38,7 +39,16 @@ interface NewProjectModalProps {
 
 export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: NewProjectModalProps) {
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const isClient = useIsClient();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startTransition(async () => {
+      await createProject(formData);
+    });
+  }
 
   return (
     <>
@@ -78,7 +88,7 @@ export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: N
                   New Project
                 </h2>
 
-                <form action={createProject} className="flex flex-col gap-6">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                   <Input
                     label="Project name"
                     name="name"
@@ -86,6 +96,7 @@ export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: N
                     placeholder="e.g. Q2 Discovery Sprint"
                     required
                     autoFocus
+                    disabled={isPending}
                   />
 
                   <div className="flex gap-3 justify-end">
@@ -93,10 +104,14 @@ export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: N
                       type="button"
                       variant="secondary"
                       onClick={() => setOpen(false)}
+                      disabled={isPending}
                     >
                       Cancel
                     </Button>
-                    <Button type="submit">Create</Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending && <Loader2 size={13} className="animate-spin" />}
+                      {isPending ? "Creating…" : "Create"}
+                    </Button>
                   </div>
                 </form>
               </motion.div>

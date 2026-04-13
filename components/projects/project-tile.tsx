@@ -160,9 +160,15 @@ export function ProjectTile({ id, name, createdAt, index }: ProjectTileProps) {
                   <button
                     onClick={confirmDelete}
                     disabled={isPending}
-                    className="flex-1 cursor-pointer rounded-[var(--radius-pill)] bg-[var(--color-error)] px-4 py-2.5 text-[14px] font-semibold text-white transition-opacity duration-[120ms] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="group relative flex-1 cursor-pointer overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-error)] px-4 py-2.5 text-[14px] font-semibold text-white transition-[background-color] duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isPending ? "Deleting…" : "Delete project"}
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 translate-y-full bg-black/20 transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0"
+                    />
+                    <span className="relative">
+                      {isPending ? "Deleting…" : "Delete project"}
+                    </span>
                   </button>
                 </div>
               </motion.div>

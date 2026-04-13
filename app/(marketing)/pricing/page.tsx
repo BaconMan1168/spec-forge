@@ -136,6 +136,9 @@ export default function PricingPage() {
 
       if (body.url) {
         window.location.href = body.url;
+      } else {
+        // Direct upgrade (Pro → Max) — no portal redirect, go to dashboard
+        window.location.href = "/dashboard?upgrade=success";
       }
     } catch {
       setError("Network error. Please check your connection and try again.");
