@@ -25,14 +25,14 @@ const makeSupabase = (user: { id: string } | null, profile: Record<string, unkno
   })),
 });
 
-const makeStripe = (upcomingInvoice: Record<string, unknown>) => ({
+const makeStripe = (previewInvoice: Record<string, unknown>) => ({
   subscriptions: {
     retrieve: vi.fn().mockResolvedValue({
       items: { data: [{ id: "si_abc" }] },
     }),
   },
   invoices: {
-    retrieveUpcoming: vi.fn().mockResolvedValue(upcomingInvoice),
+    createPreview: vi.fn().mockResolvedValue(previewInvoice),
   },
 });
 
@@ -82,7 +82,7 @@ describe("GET /api/billing/upgrade/preview", () => {
     );
     (getStripe as ReturnType<typeof vi.fn>).mockReturnValue({
       subscriptions: { retrieve: vi.fn().mockRejectedValue(new Error("Stripe error")) },
-      invoices: { retrieveUpcoming: vi.fn() },
+      invoices: { createPreview: vi.fn() },
     });
     const res = await GET();
     expect(res.status).toBe(500);

@@ -43,20 +43,22 @@ export async function GET() {
     );
     const subscriptionItemId = subscription.items.data[0]?.id;
 
-    const upcoming = await stripe.invoices.retrieveUpcoming({
+    const preview = await stripe.invoices.createPreview({
       customer: profile.stripe_customer_id,
       subscription: profile.stripe_subscription_id,
-      subscription_items: [
-        {
-          id: subscriptionItemId,
-          price: PLANS.max.stripePriceId,
-        },
-      ],
+      subscription_details: {
+        items: [
+          {
+            id: subscriptionItemId,
+            price: PLANS.max.stripePriceId,
+          },
+        ],
+      },
     });
 
     return Response.json({
-      amountDue: upcoming.amount_due,
-      currency: upcoming.currency,
+      amountDue: preview.amount_due,
+      currency: preview.currency,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to fetch preview";
