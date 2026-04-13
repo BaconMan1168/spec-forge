@@ -40,7 +40,6 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripe();
 
-    // Fetch the subscription to get the current subscription item ID
     const subscription = await stripe.subscriptions.retrieve(
       profile.stripe_subscription_id
     );
@@ -53,10 +52,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Directly upgrade the subscription — no portal redirect needed.
-    // The user's payment method is already attached to their Stripe customer
-    // from when they subscribed to Pro, so Stripe charges the stored card
-    // and handles proration automatically.
     await stripe.subscriptions.update(profile.stripe_subscription_id, {
       items: [
         {
@@ -65,15 +60,15 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
+      cancel_at_period_end: false,
     });
 
-    // Eagerly update the profile so the UI reflects the new plan immediately
-    // without waiting for the webhook round-trip.
     const serviceSupabase = createServiceClient();
     await serviceSupabase
       .from("profiles")
       .update({
         subscription_plan: "max",
+        subscription_cancel_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
