@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getStripe } from "@/lib/billing/stripe";
 import { PLANS } from "@/lib/billing/config";
 
 export async function POST(request: Request) {
+  void request;
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,11 +37,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const origin =
-    request.headers.get("origin") ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000";
-
   try {
     const stripe = getStripe();
 
@@ -56,36 +53,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a billing portal session with subscription_update_confirm flow.
-    // This shows the official Stripe confirmation page with the old price, new
-    // price, and proration before the user confirms — no double-billing risk.
-    const session = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
-      return_url: `${origin}/settings`,
-      flow_data: {
-        type: "subscription_update_confirm",
-        after_completion: {
-          type: "redirect",
-          redirect: {
-            return_url: `${origin}/dashboard?upgrade=success`,
-          },
+    // Directly upgrade the subscription — no portal redirect needed.
+    // The user's payment method is already attached to their Stripe customer
+    // from when they subscribed to Pro, so Stripe charges the stored card
+    // and handles proration automatically.
+    await stripe.subscriptions.update(profile.stripe_subscription_id, {
+      items: [
+        {
+          id: subscriptionItemId,
+          price: PLANS.max.stripePriceId,
+          quantity: 1,
         },
-        subscription_update_confirm: {
-          subscription: profile.stripe_subscription_id,
-          items: [
-            {
-              id: subscriptionItemId,
-              price: PLANS.max.stripePriceId,
-              quantity: 1,
-            },
-          ],
-        },
-      },
+      ],
     });
 
-    return Response.json({ url: session.url });
+    // Eagerly update the profile so the UI reflects the new plan immediately
+    // without waiting for the webhook round-trip.
+    const serviceSupabase = createServiceClient();
+    await serviceSupabase
+      .from("profiles")
+      .update({
+        subscription_plan: "max",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    return Response.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to create upgrade session";
+    const message = err instanceof Error ? err.message : "Failed to upgrade subscription";
     return Response.json(
       { error: { code: "UPGRADE_FAILED", message } },
       { status: 500 }
