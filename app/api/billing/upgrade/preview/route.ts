@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import { getStripe } from "@/lib/billing/stripe";
 import { PLANS } from "@/lib/billing/config";
 
-export async function POST(request: Request) {
-  void request;
+export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,39 +43,27 @@ export async function POST(request: Request) {
     );
     const subscriptionItemId = subscription.items.data[0]?.id;
 
-    if (!subscriptionItemId) {
-      return Response.json(
-        { error: { code: "NO_SUBSCRIPTION_ITEM", message: "Could not find subscription item" } },
-        { status: 500 }
-      );
-    }
-
-    await stripe.subscriptions.update(profile.stripe_subscription_id, {
-      items: [
-        {
-          id: subscriptionItemId,
-          price: PLANS.max.stripePriceId,
-          quantity: 1,
-        },
-      ],
-      cancel_at_period_end: false,
+    const preview = await stripe.invoices.createPreview({
+      customer: profile.stripe_customer_id,
+      subscription: profile.stripe_subscription_id,
+      subscription_details: {
+        items: [
+          {
+            id: subscriptionItemId,
+            price: PLANS.max.stripePriceId,
+          },
+        ],
+      },
     });
 
-    const serviceSupabase = createServiceClient();
-    await serviceSupabase
-      .from("profiles")
-      .update({
-        subscription_plan: "max",
-        subscription_cancel_at: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    return Response.json({ success: true });
+    return Response.json({
+      amountDue: preview.amount_due,
+      currency: preview.currency,
+    });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to upgrade subscription";
+    const message = err instanceof Error ? err.message : "Failed to fetch preview";
     return Response.json(
-      { error: { code: "UPGRADE_FAILED", message } },
+      { error: { code: "PREVIEW_FAILED", message } },
       { status: 500 }
     );
   }
