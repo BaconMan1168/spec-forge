@@ -51,13 +51,10 @@ export default function LoginPage() {
 
       {/* Card */}
       <div className="relative w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-2)] p-8">
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">
             SpecForge
           </h1>
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            Sign in to your account
-          </p>
         </div>
         <Suspense>
           <LoginForm />
