@@ -92,7 +92,7 @@ export function StepUpload({
             Drag & drop files here, or click to browse
           </p>
           <p className="text-[11px] text-[var(--color-text-tertiary)]">
-            Multiple files · Max 10 MB each
+            Multiple files · Size limits vary by plan and file type
           </p>
           <p className="text-[11px] text-[var(--color-text-tertiary)]">
             {ACCEPTED_FORMATS_LABEL}

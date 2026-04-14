@@ -6,10 +6,9 @@ import {
   isSupportedMimeType,
   countWords,
 } from "@/lib/parse/parse-file";
-import { canAddFile as checkCanAddFile } from "@/lib/billing/limits";
+import { canAddFile as checkCanAddFile, getUserPlan } from "@/lib/billing/limits";
+import { FILE_SIZE_LIMITS, FILE_TYPE_LABEL, formatBytes } from "@/lib/billing/config";
 import type { FeedbackFile } from "@/lib/types/database";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 function sanitizeSourceLabel(raw: string): string {
   return raw.trim().replace(/[^a-zA-Z0-9 \-]/g, "").slice(0, 60);
@@ -53,6 +52,8 @@ export async function uploadFeedbackFiles(
     throw new Error(limitResult.reason);
   }
 
+  const plan = await getUserPlan(user.id);
+
   const sourceType = sanitizeSourceLabel(
     (formData.get("source_type") as string) ?? ""
   );
@@ -63,11 +64,17 @@ export async function uploadFeedbackFiles(
   const failed: { name: string; error: string }[] = [];
 
   for (const file of files) {
-    if (file.size > MAX_FILE_SIZE) {
-      failed.push({ name: file.name, error: "File exceeds 10 MB limit" });
+    const mimeType = resolveMimeType(file);
+    const sizeLimit = FILE_SIZE_LIMITS[mimeType]?.[plan];
+    if (sizeLimit !== undefined && file.size > sizeLimit) {
+      const typeLabel = FILE_TYPE_LABEL[mimeType] ?? "This file type";
+      const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+      failed.push({
+        name: file.name,
+        error: `${typeLabel} files are limited to ${formatBytes(sizeLimit)} on the ${planLabel} plan`,
+      });
       continue;
     }
-    const mimeType = resolveMimeType(file);
     if (!isSupportedMimeType(mimeType)) {
       failed.push({ name: file.name, error: "Unsupported file type" });
       continue;
