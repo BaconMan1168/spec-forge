@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { PublicNavbar } from "@/components/nav/public-navbar";
 import { ShapesBackground } from "@/components/marketing/shapes-background";
 
@@ -7,10 +7,7 @@ export default async function MarketingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg-0)]">

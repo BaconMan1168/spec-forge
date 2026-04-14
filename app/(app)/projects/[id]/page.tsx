@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
@@ -38,9 +39,7 @@ export default async function ProjectPage({
     getLastAnalysisRun(id),
   ]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   const canRerun = user
     ? await canRerunAnalysis(user.id)

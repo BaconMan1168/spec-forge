@@ -1,6 +1,6 @@
 // app/(app)/layout.tsx
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { Particles } from "@/components/ui/particles";
 import { PageTransition } from "@/components/ui/page-transition";
@@ -11,10 +11,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 

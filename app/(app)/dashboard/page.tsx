@@ -1,5 +1,6 @@
 // app/(app)/dashboard/page.tsx
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { canCreateProject } from "@/lib/billing/limits";
 import { syncCheckoutSession } from "@/lib/billing/sync-checkout";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
@@ -14,9 +15,9 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: projects }, { data: { user } }] = await Promise.all([
+  const [{ data: projects }, user] = await Promise.all([
     supabase.from("projects").select("*").order("created_at", { ascending: false }),
-    supabase.auth.getUser(),
+    getCurrentUser(),
   ]);
 
   // Post-checkout sync: if Stripe redirected here with a session_id, sync

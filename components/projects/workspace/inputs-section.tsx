@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { FeedbackFile } from "@/lib/types/database";
@@ -57,6 +58,7 @@ interface InputsSectionProps {
 }
 
 export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectionProps) {
+  const router = useRouter();
   const [localFiles, setLocalFiles] = useState(files);
   const [isPending, startTransition] = useTransition();
 
@@ -74,9 +76,17 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
   const handleDelete = (sourceLabel: string) => {
     startTransition(async () => {
       await deleteFeedbackBatch(projectId, sourceLabel);
-      setLocalFiles((prev) =>
-        prev.filter((f) => f.source_type !== sourceLabel)
-      );
+      const remaining = localFiles.filter((f) => f.source_type !== sourceLabel);
+      setLocalFiles(remaining);
+      // If the deleted batch was in the "new" (post-analysis) group, check whether
+      // any new files remain. If not, refresh so the server recomputes isStale and
+      // the Re-analyze badge/button clears correctly.
+      if (lastAnalyzedAt) {
+        const stillHasNewFiles = remaining.some((f) => f.created_at > lastAnalyzedAt);
+        if (!stillHasNewFiles) {
+          router.refresh();
+        }
+      }
     });
   };
 

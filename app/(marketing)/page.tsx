@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { CapabilitiesSection } from "@/components/marketing/capabilities-section";
 import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
@@ -6,11 +6,7 @@ import { PricingSection } from "@/components/marketing/pricing-section";
 import { CtaSection } from "@/components/marketing/cta-section";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   const isAuthenticated = !!user;
 
   return (
