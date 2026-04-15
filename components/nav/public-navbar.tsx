@@ -48,7 +48,7 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
         {/* Brand */}
         <Link
           href="/"
-          className="mr-1 flex items-center gap-2 rounded-[var(--radius-pill)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-text-primary)]"
+          className="flex items-center gap-4 rounded-[var(--radius-pill)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-text-primary)]"
         >
           <SpecForgeLogo />
           Xern
