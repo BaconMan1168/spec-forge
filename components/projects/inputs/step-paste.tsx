@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface StepPasteProps {
@@ -70,7 +70,14 @@ export function StepPaste({
           onClick={onSubmit}
           type="button"
         >
-          Submit batch
+          {isSubmitting ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              Uploading…
+            </>
+          ) : (
+            "Submit batch"
+          )}
         </Button>
       </div>
     </div>
