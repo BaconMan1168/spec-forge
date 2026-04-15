@@ -42,7 +42,7 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
           className="mr-1 flex items-center gap-2 rounded-[var(--radius-pill)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-text-primary)]"
         >
           <SpecForgeLogo />
-          SpecForge
+          Xern
         </Link>
 
         <div

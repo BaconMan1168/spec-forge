@@ -335,7 +335,7 @@ export default function PricingPage() {
               </span>
             </div>
             <p className="mb-8 text-[14px] text-[var(--color-text-tertiary)]">
-              For active PMs and founders using SpecForge regularly.
+              For active PMs and founders using Xern AI regularly.
             </p>
             <ul className="mb-10 flex flex-col gap-3">
               {PRO_FEATURES.map((f) => (

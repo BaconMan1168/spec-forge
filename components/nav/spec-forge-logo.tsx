@@ -11,7 +11,7 @@ export function SpecForgeLogo() {
       }}
       aria-hidden="true"
     >
-      <span className="text-[13px] font-bold text-white">S</span>
+      <span className="text-[13px] font-bold text-white">X</span>
     </div>
   );
 }

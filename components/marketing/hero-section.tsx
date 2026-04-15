@@ -39,14 +39,7 @@ export function HeroSection({ isAuthenticated = false }: { isAuthenticated?: boo
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.85, ease: EASE }}
-            className="block text-right text-[112px] font-bold leading-[0.98] tracking-[-0.035em]"
-            style={{
-              background:
-                "linear-gradient(90deg, var(--color-analog-1) 0%, var(--color-text-primary) 40%, var(--color-accent-primary) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+            className="block text-right text-[112px] font-bold leading-[0.98] tracking-[-0.035em] text-[var(--color-text-primary)]"
           >
             to Actionable Specs
           </motion.span>
@@ -60,7 +53,7 @@ export function HeroSection({ isAuthenticated = false }: { isAuthenticated?: boo
           className="flex items-end justify-between gap-16"
         >
           <p className="max-w-[440px] text-[19px] leading-[1.75] text-[var(--color-text-tertiary)]">
-            Upload customer interviews and feedback. SpecForge synthesizes
+            Upload customer interviews and feedback. Xern AI synthesizes
             insights and generates structured feature proposals — ready to paste
             into Cursor or Claude Code.
           </p>

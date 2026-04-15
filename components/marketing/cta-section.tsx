@@ -88,7 +88,7 @@ export function CtaSection({ isAuthenticated = false }: { isAuthenticated?: bool
                 "polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)",
             }}
           />
-          SpecForge
+          Xern
         </div>
         <nav className="flex gap-7 text-[13px] text-[var(--color-text-tertiary)]">
           <Link href="/" className="transition-colors duration-[180ms] hover:text-[var(--color-text-secondary)]">Home</Link>
@@ -97,7 +97,7 @@ export function CtaSection({ isAuthenticated = false }: { isAuthenticated?: bool
           <span className="cursor-default">Terms</span>
         </nav>
         <p className="text-[12px] text-[hsl(220_6%_32%)]">
-          © 2026 SpecForge. All rights reserved.
+          © 2026 Xern AI. All rights reserved.
         </p>
       </footer>
     </>
