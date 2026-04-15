@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { UploadCloud, ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
+import { UploadCloud, ArrowLeft, ChevronDown, ChevronUp, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 
@@ -203,7 +203,14 @@ export function StepUpload({
           onClick={onSubmit}
           type="button"
         >
-          Submit batch
+          {isSubmitting ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              Uploading…
+            </>
+          ) : (
+            "Submit batch"
+          )}
         </Button>
       </div>
     </div>
