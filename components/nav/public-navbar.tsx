@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { SpecForgeLogo } from "@/components/nav/spec-forge-logo";
 import { AvatarDropdown } from "@/components/nav/avatar-dropdown";
@@ -23,6 +23,15 @@ interface PublicNavbarProps {
 export function PublicNavbar({ userEmail }: PublicNavbarProps) {
   const pathname = usePathname();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const [tubeStyle, setTubeStyle] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const el = linkRefs.current[pathname];
+    if (el) {
+      setTubeStyle({ left: el.offsetLeft + el.offsetWidth / 2, width: el.offsetWidth * 0.6 });
+    }
+  }, [pathname]);
 
   // The bg pill lives on the active nav link at rest; slides to wherever is hovered
   const activeNavItem = NAV_LINKS.find((l) => l.href === pathname)?.href ?? null;
@@ -51,46 +60,48 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
         />
 
         {/* Nav links */}
-        {NAV_LINKS.map((link) => {
-          const isActive = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              onMouseEnter={() => setHoveredItem(link.href)}
-              onMouseLeave={() => setHoveredItem(null)}
-              className={cn(
-                "relative rounded-[var(--radius-pill)] px-5 py-2 text-sm font-medium transition-colors duration-[180ms]",
-                isActive
-                  ? "text-[var(--color-accent-primary)]"
-                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              )}
-            >
-              {/* Sliding background pill */}
-              {bgTarget === link.href && (
-                <motion.span
-                  layoutId="nav-bg"
-                  className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
-                  transition={SLIDE_TRANSITION}
-                />
-              )}
-              {/* Tube light — slides between active nav links */}
-              {isActive && (
-                <motion.span
-                  layoutId="tube-light"
-                  aria-hidden="true"
-                  className="absolute left-1/2 top-[-3px] h-1 w-8 -translate-x-1/2 rounded-b-sm bg-[var(--color-accent-primary)]"
-                  transition={TUBE_TRANSITION}
-                  style={{
-                    boxShadow:
-                      "0 0 12px 4px hsla(40,85%,58%,0.5), 0 12px 28px 2px hsla(40,85%,58%,0.15)",
-                  }}
-                />
-              )}
-              <span className="relative z-10">{link.name}</span>
-            </Link>
-          );
-        })}
+        <div className="relative flex items-center">
+          {/* Single always-mounted tube-light — position driven by measured DOM ref */}
+          {tubeStyle && (
+            <motion.span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-[-3px] h-1 rounded-b-sm bg-[var(--color-accent-primary)]"
+              animate={{ left: tubeStyle.left - tubeStyle.width / 2, width: tubeStyle.width }}
+              transition={TUBE_TRANSITION}
+              style={{
+                boxShadow: "0 0 12px 4px hsla(40,85%,58%,0.5), 0 12px 28px 2px hsla(40,85%,58%,0.15)",
+              }}
+            />
+          )}
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                ref={(el) => { linkRefs.current[link.href] = el; }}
+                onMouseEnter={() => setHoveredItem(link.href)}
+                onMouseLeave={() => setHoveredItem(null)}
+                className={cn(
+                  "relative rounded-[var(--radius-pill)] px-5 py-2 text-sm font-medium transition-colors duration-[180ms]",
+                  isActive
+                    ? "text-[var(--color-accent-primary)]"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {/* Sliding background pill */}
+                {bgTarget === link.href && (
+                  <motion.span
+                    layoutId="nav-bg"
+                    className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
+                    transition={SLIDE_TRANSITION}
+                  />
+                )}
+                <span className="relative z-10">{link.name}</span>
+              </Link>
+            );
+          })}
+        </div>
 
         <div
           aria-hidden="true"

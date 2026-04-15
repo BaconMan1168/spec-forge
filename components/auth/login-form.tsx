@@ -18,18 +18,31 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signedUp, setSignedUp] = useState(false);
 
   function toggleMode() {
     setMode((m) => (m === "signin" ? "signup" : "signin"));
     setError(null);
+    setEmailError(null);
+    setPasswordError(null);
+    setConfirmPasswordError(null);
     setConfirmPassword("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    let valid = true;
+    if (!email.trim()) { setEmailError("Email is required"); valid = false; }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("Enter a valid email address"); valid = false; }
+    if (!password) { setPasswordError("Password is required"); valid = false; }
+    if (mode === "signup" && !confirmPassword) { setConfirmPasswordError("Please confirm your password"); valid = false; }
+    if (!valid) return;
 
     if (mode === "signup" && password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -107,23 +120,27 @@ export function LoginForm() {
         {mode === "signin" ? "Sign in to your account" : "Create your account"}
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          required
-        />
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          required
-        />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
+        <div>
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
+            placeholder="you@example.com"
+          />
+          {emailError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{emailError}</p>}
+        </div>
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
+            placeholder="••••••••"
+          />
+          {passwordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{passwordError}</p>}
+        </div>
 
         <AnimatePresence initial={false}>
           {mode === "signup" && (
@@ -138,10 +155,10 @@ export function LoginForm() {
                 label="Confirm password"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(null); }}
                 placeholder="••••••••"
-                required
               />
+              {confirmPasswordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{confirmPasswordError}</p>}
             </motion.div>
           )}
         </AnimatePresence>

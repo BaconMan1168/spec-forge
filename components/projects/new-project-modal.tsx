@@ -40,11 +40,17 @@ interface NewProjectModalProps {
 export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: NewProjectModalProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [nameError, setNameError] = useState<string | null>(null);
   const isClient = useIsClient();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    if (!name?.trim()) {
+      setNameError("Project name is required");
+      return;
+    }
     startTransition(async () => {
       await createProject(formData);
     });
@@ -88,16 +94,19 @@ export function NewProjectModal({ canCreate = { allowed: true, reason: "" } }: N
                   New Project
                 </h2>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <Input
-                    label="Project name"
-                    name="name"
-                    type="text"
-                    placeholder="e.g. Q2 Discovery Sprint"
-                    required
-                    autoFocus
-                    disabled={isPending}
-                  />
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
+                  <div>
+                    <Input
+                      label="Project name"
+                      name="name"
+                      type="text"
+                      placeholder="e.g. Q2 Discovery Sprint"
+                      autoFocus
+                      disabled={isPending}
+                      onChange={() => setNameError(null)}
+                    />
+                    {nameError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{nameError}</p>}
+                  </div>
 
                   <div className="flex gap-3 justify-end">
                     <Button
