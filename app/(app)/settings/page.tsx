@@ -35,7 +35,7 @@ export default async function SettingsPage() {
     supabase
       .from("profiles")
       .select(
-        "subscription_status, subscription_plan, stripe_customer_id, subscription_cancel_at"
+        "subscription_status, subscription_plan, stripe_customer_id, subscription_cancel_at, subscription_pending_plan, subscription_period_end"
       )
       .eq("id", user.id)
       .single(),
@@ -56,7 +56,11 @@ export default async function SettingsPage() {
   const projectsThisMonth = projectCount ?? 0;
   const limit = PROJECT_LIMITS[plan];
   const cancelAt: string | null = profile?.subscription_cancel_at ?? null;
+  const pendingDowngradePlan: "pro" | null =
+    profile?.subscription_pending_plan === "pro" ? "pro" : null;
+  const periodEnd: string | null = profile?.subscription_period_end ?? null;
   const isPaid = plan === "pro" || plan === "max";
+  const isDowngrading = pendingDowngradePlan !== null && !cancelAt;
 
   return (
     <div className="mx-auto max-w-[480px]">
@@ -73,7 +77,7 @@ export default async function SettingsPage() {
           <span className="text-[22px] font-bold text-[var(--color-text-primary)]">
             {PLAN_LABELS[plan]}
           </span>
-          {isPaid && !cancelAt && (
+          {isPaid && !cancelAt && !isDowngrading && (
             <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-accent-primary)]">
               Active
             </span>
@@ -81,6 +85,11 @@ export default async function SettingsPage() {
           {isPaid && cancelAt && (
             <span className="rounded-[var(--radius-pill)] bg-[var(--color-error,#f87171)]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-error,#f87171)]">
               Canceling
+            </span>
+          )}
+          {isDowngrading && (
+            <span className="rounded-[var(--radius-pill)] bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
+              Downgrading
             </span>
           )}
         </div>
@@ -101,7 +110,12 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        <SubscriptionActions plan={plan} cancelAt={cancelAt} />
+        <SubscriptionActions
+          plan={plan}
+          cancelAt={cancelAt}
+          pendingDowngradePlan={pendingDowngradePlan}
+          periodEnd={periodEnd}
+        />
       </div>
     </div>
   );

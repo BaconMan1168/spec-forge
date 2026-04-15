@@ -24,11 +24,17 @@ const makeUpsert = vi.fn().mockResolvedValue({ error: null });
 const makeUpdate = vi.fn().mockReturnValue({
   eq: vi.fn().mockResolvedValue({ error: null }),
 });
+const makeSelect = vi.fn().mockReturnValue({
+  eq: vi.fn().mockReturnValue({
+    single: vi.fn().mockResolvedValue({ data: { subscription_pending_plan: null }, error: null }),
+  }),
+});
 
 const makeServiceClient = () => ({
   from: vi.fn(() => ({
     upsert: makeUpsert,
     update: makeUpdate,
+    select: makeSelect,
   })),
 });
 

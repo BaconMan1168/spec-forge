@@ -85,6 +85,16 @@ export async function POST(request: Request) {
         ? new Date(periodEnd * 1000).toISOString()
         : null;
 
+      // Fetch current profile to check if a pending downgrade just took effect
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("subscription_pending_plan")
+        .eq("id", userId)
+        .single();
+
+      const pendingPlan = existingProfile?.subscription_pending_plan ?? null;
+      const downgradeFulfilled = pendingPlan !== null && plan === pendingPlan;
+
       await supabase
         .from("profiles")
         .update({
@@ -97,6 +107,10 @@ export async function POST(request: Request) {
             ? new Date(periodEnd * 1000).toISOString()
             : null,
           subscription_cancel_at: cancelAt,
+          // Clear pending downgrade once it's been applied
+          ...(downgradeFulfilled
+            ? { subscription_pending_plan: null, subscription_schedule_id: null }
+            : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);

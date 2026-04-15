@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowDownCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 // Returns false during SSR, true on the client
@@ -29,18 +29,29 @@ const BACKDROP_TRANSITION = {
 interface SubscriptionActionsProps {
   plan: "free" | "pro" | "max";
   cancelAt: string | null; // ISO date string if pending cancellation
+  pendingDowngradePlan?: "pro" | null;
+  periodEnd?: string | null;
 }
 
-export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps) {
+export function SubscriptionActions({
+  plan,
+  cancelAt,
+  pendingDowngradePlan = null,
+  periodEnd = null,
+}: SubscriptionActionsProps) {
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [downgradeLoading, setDowngradeLoading] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [upgradeConfirmOpen, setUpgradeConfirmOpen] = useState(false);
+  const [downgradeConfirmOpen, setDowngradeConfirmOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewAmount, setPreviewAmount] = useState<{ amountDue: number; currency: string } | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isClient = useIsClient();
+
+  const isDowngrading = pendingDowngradePlan !== null && !cancelAt;
 
   async function openUpgradeConfirm() {
     setUpgradeConfirmOpen(true);
@@ -73,7 +84,6 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
         setUpgradeConfirmOpen(false);
         return;
       }
-      // Direct upgrade — reload to reflect the new plan from server
       window.location.href = "/dashboard?upgrade=success";
     } catch {
       setError("Network error. Please try again.");
@@ -94,13 +104,32 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
         setCancelConfirmOpen(false);
         return;
       }
-      // Reload to reflect the new cancellation state from server
       window.location.reload();
     } catch {
       setError("Network error. Please try again.");
       setCancelConfirmOpen(false);
     } finally {
       setCancelLoading(false);
+    }
+  }
+
+  async function handleDowngrade() {
+    setError(null);
+    setDowngradeLoading(true);
+    try {
+      const res = await fetch("/api/billing/downgrade", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error?.message ?? "Failed to schedule downgrade. Please try again.");
+        setDowngradeConfirmOpen(false);
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setError("Network error. Please try again.");
+      setDowngradeConfirmOpen(false);
+    } finally {
+      setDowngradeLoading(false);
     }
   }
 
@@ -118,6 +147,14 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
       </Link>
     );
   }
+
+  const periodEndFormatted = periodEnd
+    ? new Date(periodEnd).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <>
@@ -142,9 +179,16 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
           </button>
         )}
 
-        {plan === "max" && (
+        {plan === "max" && !isDowngrading && (
           <div className="flex w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--color-accent-primary)]/30 bg-[var(--color-accent-muted)] px-8 py-[14px] text-[14px] font-medium text-[var(--color-accent-primary)]">
             All features unlocked
+          </div>
+        )}
+
+        {plan === "max" && isDowngrading && periodEndFormatted && (
+          <div className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] border border-amber-500/30 bg-amber-500/10 px-8 py-[14px] text-[14px] font-medium text-amber-400">
+            <ArrowDownCircle size={15} />
+            Downgrading to Pro on {periodEndFormatted}
           </div>
         )}
 
@@ -159,14 +203,29 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
               })}
             </span>
           </p>
+        ) : isDowngrading ? (
+          <p className="text-center text-[12px] text-[var(--color-text-tertiary)]">
+            You&apos;ll keep Max access until {periodEndFormatted ?? "your billing period ends"}.
+          </p>
         ) : (
-          <button
-            onClick={() => setCancelConfirmOpen(true)}
-            disabled={cancelLoading}
-            className="w-full cursor-pointer rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-transparent px-8 py-[14px] text-[15px] font-medium text-[var(--color-text-secondary)] transition-[border-color,color] duration-[180ms] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {cancelLoading ? "Canceling…" : "Cancel Subscription"}
-          </button>
+          <div className="flex flex-col gap-2">
+            {plan === "max" && (
+              <button
+                onClick={() => setDowngradeConfirmOpen(true)}
+                disabled={downgradeLoading}
+                className="w-full cursor-pointer rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-transparent px-8 py-[14px] text-[15px] font-medium text-[var(--color-text-secondary)] transition-[border-color,color] duration-[180ms] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {downgradeLoading ? "Scheduling…" : "Downgrade to Pro — $9/mo"}
+              </button>
+            )}
+            <button
+              onClick={() => setCancelConfirmOpen(true)}
+              disabled={cancelLoading}
+              className="w-full cursor-pointer rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-transparent px-8 py-[14px] text-[15px] font-medium text-[var(--color-text-secondary)] transition-[border-color,color] duration-[180ms] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {cancelLoading ? "Canceling…" : "Cancel Subscription"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -231,6 +290,81 @@ export function SubscriptionActions({ plan, cancelAt }: SubscriptionActionsProps
                     />
                     <span className="relative">
                       {cancelLoading ? "Canceling…" : "Yes, cancel"}
+                    </span>
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Downgrade confirmation modal */}
+      {isClient && createPortal(
+        <AnimatePresence>
+          {downgradeConfirmOpen && (
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="downgrade-modal-title"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={BACKDROP_TRANSITION}
+              onClick={() => !downgradeLoading && setDowngradeConfirmOpen(false)}
+            >
+              <motion.div
+                className="w-full max-w-[400px] rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] p-7 shadow-[var(--shadow-3)]"
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                transition={CARD_TRANSITION}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                    <ArrowDownCircle size={16} className="text-amber-400" />
+                  </div>
+                  <h2
+                    id="downgrade-modal-title"
+                    className="text-[17px] font-semibold text-[var(--color-text-primary)]"
+                  >
+                    Downgrade to Pro?
+                  </h2>
+                </div>
+
+                <p className="mb-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                  You&apos;ll keep Max access until{" "}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {periodEndFormatted ?? "the end of your billing period"}
+                  </span>
+                  . After that, your plan switches to Pro at $9/mo.
+                </p>
+                <p className="mb-7 text-[13px] text-[var(--color-text-tertiary)]">
+                  No refund is issued for the current period. You can upgrade back to Max at any time.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDowngradeConfirmOpen(false)}
+                    disabled={downgradeLoading}
+                    className="flex-1 cursor-pointer rounded-[var(--radius-pill)] border border-[var(--color-border-subtle)] bg-transparent px-4 py-2.5 text-[14px] font-medium text-[var(--color-text-secondary)] transition-colors duration-[120ms] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Keep Max
+                  </button>
+                  <button
+                    onClick={handleDowngrade}
+                    disabled={downgradeLoading}
+                    className="group relative flex-1 cursor-pointer overflow-hidden rounded-[var(--radius-pill)] bg-amber-500 px-4 py-2.5 text-[14px] font-semibold text-white transition-[background-color] duration-[120ms] hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 translate-y-full bg-black/20 transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0"
+                    />
+                    <span className="relative">
+                      {downgradeLoading ? "Scheduling…" : "Yes, downgrade"}
                     </span>
                   </button>
                 </div>
