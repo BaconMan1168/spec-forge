@@ -53,7 +53,7 @@ export default function LoginPage() {
       <div className="relative w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-2)] p-8">
         <div className="mb-6 text-center">
           <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">
-            SpecForge
+            Xern AI
           </h1>
         </div>
         <Suspense>

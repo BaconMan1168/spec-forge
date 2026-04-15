@@ -83,7 +83,7 @@ export function CapabilitiesSection() {
         transition={{ duration: 1.2, delay: 0.6, ease: EASE }}
         className="mb-24 max-w-[500px] text-[19px] leading-[1.75] text-[var(--color-text-tertiary)]"
       >
-        No more manual synthesis. SpecForge turns messy qualitative feedback
+        No more manual synthesis. Xern AI turns messy qualitative feedback
         into structured, evidence-backed specs in minutes.
       </motion.p>
 

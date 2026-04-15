@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "SpecForge",
+  title: "Xern AI",
   description: "Turn customer feedback into structured feature proposals.",
 };
 

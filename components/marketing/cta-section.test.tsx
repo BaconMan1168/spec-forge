@@ -59,6 +59,6 @@ describe("CtaSection", () => {
   it("renders footer with SpecForge brand", () => {
     render(<CtaSection />);
     // Footer is rendered inside CtaSection
-    expect(screen.getByText("SpecForge")).toBeInTheDocument();
+    expect(screen.getByText("Xern")).toBeInTheDocument();
   });
 });

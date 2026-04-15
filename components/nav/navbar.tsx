@@ -22,7 +22,7 @@ export function Navbar({ userEmail }: NavbarProps) {
           >
             <SpecForgeLogo />
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]">
-              SpecForge
+              Xern
             </span>
           </Link>
           <NavBreadcrumb />

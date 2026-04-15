@@ -21,7 +21,7 @@ const STEPS = [
   {
     num: "2",
     title: "Run Analysis",
-    desc: "SpecForge reads all your inputs simultaneously, surfaces recurring patterns, and attaches direct customer quotes to each theme as evidence. No hallucination — every insight traces back to something a real user said.",
+    desc: "Xern AI reads all your inputs simultaneously, surfaces recurring patterns, and attaches direct customer quotes to each theme as evidence. No hallucination — every insight traces back to something a real user said.",
   },
   {
     num: "3",
