@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { SpecForgeLogo } from "@/components/nav/spec-forge-logo";
@@ -25,6 +25,7 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const [tubeStyle, setTubeStyle] = useState<{ left: number; width: number } | null>(null);
+  const [pillStyle, setPillStyle] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
     const el = linkRefs.current[pathname];
@@ -36,6 +37,26 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
   // The bg pill lives on the active nav link at rest; slides to wherever is hovered
   const activeNavItem = NAV_LINKS.find((l) => l.href === pathname)?.href ?? null;
   const bgTarget = hoveredItem ?? activeNavItem;
+
+  // Update pill position using DOM measurements — same pattern as tube-light to avoid
+  // layoutId scroll-jump: Framer Motion's layout projection can incorrectly include
+  // window.scrollY when measuring positions inside a position:fixed element.
+  useEffect(() => {
+    const navLink = NAV_LINKS.find((l) => l.href === bgTarget);
+    if (!navLink) {
+      setPillStyle(null);
+      return;
+    }
+    const el = linkRefs.current[navLink.href];
+    if (el) {
+      setPillStyle({
+        left: el.offsetLeft,
+        top: el.offsetTop,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+      });
+    }
+  }, [bgTarget]);
 
   return (
     <div className="pointer-events-none fixed left-0 right-0 top-0 z-[200] flex justify-center pt-6">
@@ -73,6 +94,21 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
               }}
             />
           )}
+          {/* Single always-mounted background pill — position driven by measured DOM ref,
+              avoids layoutId scroll-jump bug in fixed containers */}
+          {pillStyle && (
+            <motion.span
+              aria-hidden="true"
+              className="pointer-events-none absolute rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
+              animate={{
+                left: pillStyle.left,
+                top: pillStyle.top,
+                width: pillStyle.width,
+                height: pillStyle.height,
+              }}
+              transition={SLIDE_TRANSITION}
+            />
+          )}
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -89,14 +125,6 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
                     : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 )}
               >
-                {/* Sliding background pill */}
-                {bgTarget === link.href && (
-                  <motion.span
-                    layoutId="nav-bg"
-                    className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
-                    transition={SLIDE_TRANSITION}
-                  />
-                )}
                 <span className="relative z-10">{link.name}</span>
               </Link>
             );
@@ -128,13 +156,19 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
               onMouseLeave={() => setHoveredItem(null)}
               className="relative rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors duration-[180ms] hover:text-[var(--color-text-primary)]"
             >
-              {bgTarget === "sign-in" && (
-                <motion.span
-                  layoutId="nav-bg"
-                  className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
-                  transition={SLIDE_TRANSITION}
-                />
-              )}
+              {/* Simple fade — no layoutId to avoid cross-section scroll-jump */}
+              <AnimatePresence>
+                {hoveredItem === "sign-in" && (
+                  <motion.span
+                    key="sign-in-bg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 rounded-[var(--radius-pill)] bg-[var(--color-surface-0)]"
+                  />
+                )}
+              </AnimatePresence>
               <span className="relative z-10">Sign In</span>
             </Link>
 
