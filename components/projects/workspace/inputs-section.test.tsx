@@ -15,6 +15,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("@/app/actions/feedback-files", () => ({
   deleteFeedbackBatch: vi.fn().mockResolvedValue(undefined),
 }));

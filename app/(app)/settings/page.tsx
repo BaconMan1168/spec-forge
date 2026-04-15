@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { SubscriptionActions } from "@/components/billing/subscription-actions";
 
 const PLAN_LABELS: Record<"free" | "pro" | "max", string> = {
@@ -22,9 +23,7 @@ const PROJECT_LIMITS: Record<"free" | "pro" | "max", number | null> = {
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 
