@@ -52,6 +52,9 @@ export async function uploadFeedbackFiles(
     throw new Error(limitResult.reason);
   }
 
+  // remaining tells us how many more files this project can accept
+  let slotsLeft = limitResult.remaining ?? 0;
+
   const plan = await getUserPlan(user.id);
 
   const sourceType = sanitizeSourceLabel(
@@ -64,6 +67,10 @@ export async function uploadFeedbackFiles(
   const failed: { name: string; error: string }[] = [];
 
   for (const file of files) {
+    if (slotsLeft <= 0) {
+      failed.push({ name: file.name, error: limitResult.reason || "File limit reached for this project" });
+      continue;
+    }
     const mimeType = resolveMimeType(file);
     const sizeLimit = FILE_SIZE_LIMITS[mimeType]?.[plan];
     if (sizeLimit !== undefined && file.size > sizeLimit) {
@@ -118,6 +125,7 @@ export async function uploadFeedbackFiles(
         continue;
       }
       succeeded.push(record as FeedbackFile);
+      slotsLeft--;
     } catch (err) {
       failed.push({
         name: file.name,
