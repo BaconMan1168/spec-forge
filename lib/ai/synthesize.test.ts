@@ -73,7 +73,8 @@ describe("synthesize", () => {
     await synthesize(files);
 
     const call = (generateObject as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(call.prompt).toContain("Support Ticket");
-    expect(call.prompt).toContain("feedback text");
+    const userMessage = call.messages.find((m: { role: string }) => m.role === "user");
+    expect(userMessage.content).toContain("Support Ticket");
+    expect(userMessage.content).toContain("feedback text");
   });
 });

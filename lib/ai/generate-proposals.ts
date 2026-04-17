@@ -32,22 +32,35 @@ ${quotesText}`;
 }
 
 export async function generateProposals(themes: Theme[]): Promise<ProposalOutput[]> {
-  const results: ProposalOutput[] = [];
-
-  for (const theme of themes) {
-    try {
-      const { object } = await generateObject({
+  // Run all proposals in parallel — reduces wall-clock time from O(n) sequential
+  // to O(1) (bounded by the single slowest call). The cached system prompt is
+  // written on the first streaming response and read by subsequent analysis runs.
+  const settled = await Promise.allSettled(
+    themes.map((theme) =>
+      generateObject({
         model: anthropic(env.AI_MODEL),
         schema: ProposalOutputSchema,
-        system: SYSTEM_PROMPT,
-        prompt: buildProposalPrompt(theme),
-      });
-      results.push(object);
-    } catch {
-      // Skip failed proposals — continue with remaining themes
-      // Per spec: "Stage 2 schema validation fails for one proposal → Skip that proposal, continue"
-    }
-  }
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+            providerOptions: {
+              anthropic: { cacheControl: { type: "ephemeral" } },
+            },
+          },
+          {
+            role: "user",
+            content: buildProposalPrompt(theme),
+          },
+        ],
+      }).then((r) => r.object)
+    )
+  );
 
-  return results;
+  // Per spec: skip failed proposals, keep the rest
+  return settled
+    .filter(
+      (r): r is PromiseFulfilledResult<ProposalOutput> => r.status === "fulfilled"
+    )
+    .map((r) => r.value);
 }
