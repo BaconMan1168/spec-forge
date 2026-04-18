@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Plus, Search, Star } from "lucide-react";
 import { AnalyzeButton } from "./analyze-button";
+import { InputsSection } from "./inputs-section";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 import type { LimitResult } from "@/lib/billing/limits";
+import type { FeedbackFile } from "@/lib/types/database";
 
 interface WorkspaceShellProps {
   projectId: string;
@@ -12,11 +17,12 @@ interface WorkspaceShellProps {
   hasResults: boolean;
   insightsCount: number;
   proposalsCount: number;
-  addInputsButton: React.ReactNode;
-  inputsSection: React.ReactNode;
+  canAddFileResult: LimitResult;
+  canRerun: LimitResult;
+  files: FeedbackFile[];
+  lastAnalyzedAt: string | null;
   themesContent: React.ReactNode;
   proposalsContent: React.ReactNode;
-  canRerun: LimitResult;
 }
 
 function PulseSkeleton() {
@@ -47,13 +53,46 @@ export function WorkspaceShell({
   hasResults,
   insightsCount,
   proposalsCount,
-  addInputsButton,
-  inputsSection,
+  canAddFileResult,
+  canRerun,
+  files,
+  lastAnalyzedAt,
   themesContent,
   proposalsContent,
-  canRerun,
 }: WorkspaceShellProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Optimistic file count — updated immediately when InputsSection deletes a file.
+  // Syncs back to server truth when files prop updates after router.refresh().
+  const [localFileCount, setLocalFileCount] = useState(files.length);
+  useEffect(() => {
+    setLocalFileCount(files.length);
+  }, [files.length]);
+
+  // Max files = server count + remaining slots. After an optimistic delete the
+  // localFileCount drops below maxFiles immediately, re-enabling the button.
+  const maxFiles = files.length + (canAddFileResult.remaining ?? 0);
+  const effectiveCanAdd = localFileCount < maxFiles;
+
+  const addInputsButton = effectiveCanAdd ? (
+    <Link
+      href={`/projects/${projectId}/add`}
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+    >
+      <Plus size={13} />
+      Add inputs
+    </Link>
+  ) : (
+    <PlanLimitTooltip
+      allowed={false}
+      reason={canAddFileResult.reason}
+      title="Upload limit reached"
+    >
+      <button className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
+        <Plus size={13} />
+        Add inputs
+      </button>
+    </PlanLimitTooltip>
+  );
 
   return (
     <>
@@ -73,7 +112,17 @@ export function WorkspaceShell({
       <div className="h-px bg-[var(--color-border-subtle)]" />
 
       {/* Inputs section — always static */}
-      {inputsSection}
+      <div className="py-7">
+        <ScrollReveal delay={0}>
+          <InputsSection
+            files={files}
+            projectId={projectId}
+            lastAnalyzedAt={lastAnalyzedAt}
+            canAddFile={canAddFileResult}
+            onFileCountChange={setLocalFileCount}
+          />
+        </ScrollReveal>
+      </div>
 
       <div className="h-px bg-[var(--color-border-subtle)]" />
 

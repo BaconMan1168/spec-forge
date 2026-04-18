@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileText } from "lucide-react";
@@ -59,9 +59,10 @@ interface InputsSectionProps {
   projectId: string;
   lastAnalyzedAt?: string | null;
   canAddFile?: LimitResult;
+  onFileCountChange?: (count: number) => void;
 }
 
-export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: InputsSectionProps) {
+export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, onFileCountChange }: InputsSectionProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // useOptimistic keeps localFiles in sync with the server `files` prop automatically
@@ -70,6 +71,12 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
     files,
     (current, sourceLabel: string) => current.filter((f) => f.source_type !== sourceLabel)
   );
+
+  // Notify parent (WorkspaceShell) of the current optimistic file count so the
+  // top "Add inputs" button re-enables immediately after a deletion at cap.
+  useEffect(() => {
+    onFileCountChange?.(localFiles.length);
+  }, [localFiles.length, onFileCountChange]);
 
   const included = lastAnalyzedAt
     ? localFiles.filter((f) => f.created_at <= lastAnalyzedAt)
@@ -91,7 +98,12 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
     });
   };
 
-  const limitHit = canAddFile !== undefined && !canAddFile.allowed;
+  // Compute limit optimistically: maxFiles is derived from the server count plus
+  // remaining slots. After an optimistic delete, localFiles.length drops below
+  // maxFiles immediately, re-enabling the bottom "add more" card without waiting
+  // for router.refresh() to complete.
+  const maxFiles = files.length + (canAddFile?.remaining ?? 0);
+  const limitHit = canAddFile !== undefined && !canAddFile.allowed && localFiles.length >= maxFiles;
 
   const addMoreCardContent = (
     <>
