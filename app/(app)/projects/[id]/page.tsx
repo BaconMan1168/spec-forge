@@ -1,10 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { InputsSection } from "@/components/projects/workspace/inputs-section";
 import { LockedSection } from "@/components/projects/workspace/locked-section";
 import { WorkspaceShell } from "@/components/projects/workspace/workspace-shell";
 import { ThemesSection } from "@/components/projects/workspace/themes-section";
@@ -12,7 +8,6 @@ import { ProposalsSection } from "@/components/projects/workspace/proposals-sect
 import { getFeedbackFiles } from "@/app/actions/feedback-files";
 import { getInsights, getProposals, getLastAnalysisRun } from "@/app/actions/analysis";
 import { canAddFile, canRerunAnalysis, canExport } from "@/lib/billing/limits";
-import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 import type { Project } from "@/lib/types/database";
 
 export default async function ProjectPage({
@@ -124,41 +119,10 @@ export default async function ProjectPage({
         hasResults={hasResults}
         insightsCount={insights.length}
         proposalsCount={proposals.length}
+        canAddFileResult={canAddFileResult}
         canRerun={canRerun}
-        addInputsButton={
-          canAddFileResult.allowed ? (
-            <Link
-              href={`/projects/${id}/add`}
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
-            >
-              <Plus size={13} />
-              Add inputs
-            </Link>
-          ) : (
-            <PlanLimitTooltip
-              allowed={false}
-              reason={canAddFileResult.reason}
-              title="Upload limit reached"
-            >
-              <button className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
-                <Plus size={13} />
-                Add inputs
-              </button>
-            </PlanLimitTooltip>
-          )
-        }
-        inputsSection={
-          <div className="py-7">
-            <ScrollReveal delay={0}>
-              <InputsSection
-                files={feedbackFiles}
-                projectId={id}
-                lastAnalyzedAt={lastAnalyzedAt}
-                canAddFile={canAddFileResult}
-              />
-            </ScrollReveal>
-          </div>
-        }
+        files={feedbackFiles}
+        lastAnalyzedAt={lastAnalyzedAt}
         themesContent={
           insights.length > 0 ? (
             <ThemesSection insights={insights} isStale={isStale} />
