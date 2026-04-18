@@ -30,6 +30,8 @@ interface StepUploadProps {
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  /** How many more files this project can accept. When provided, warns if selection exceeds it. */
+  remaining?: number;
 }
 
 export function StepUpload({
@@ -41,6 +43,7 @@ export function StepUpload({
   onBack,
   onSubmit,
   isSubmitting,
+  remaining,
 }: StepUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -67,7 +70,8 @@ export function StepUpload({
     if (next.length <= 1) setIsExpanded(false);
   };
 
-  const canSubmit = files.length > 0 && !isSubmitting;
+  const overLimit = remaining !== undefined && files.length > remaining;
+  const canSubmit = files.length > 0 && !isSubmitting && !overLimit;
   const latestFile = files[files.length - 1];
   const extraCount = files.length - 1;
 
@@ -172,6 +176,13 @@ export function StepUpload({
           </div>
         )}
       </div>
+
+      {overLimit && remaining !== undefined && (
+        <p className="text-[12px] font-medium text-[var(--color-error)]">
+          Only {remaining} slot{remaining !== 1 ? "s" : ""} available — remove{" "}
+          {files.length - remaining} file{files.length - remaining !== 1 ? "s" : ""} to continue.
+        </p>
+      )}
 
       <div>
         <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.07em] text-[var(--color-text-tertiary)]">
