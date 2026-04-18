@@ -16,7 +16,7 @@ const FREQ_STYLES = [
 
 interface ThemesSectionProps {
   insights: Insight[];
-  isStale: boolean;
+  isStale?: boolean;
 }
 
 export function ThemesSection({ insights, isStale }: ThemesSectionProps) {

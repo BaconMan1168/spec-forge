@@ -60,9 +60,10 @@ interface InputsSectionProps {
   lastAnalyzedAt?: string | null;
   canAddFile?: LimitResult;
   onFileCountChange?: (count: number) => void;
+  onNewFilesChange?: (hasNewFiles: boolean) => void;
 }
 
-export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, onFileCountChange }: InputsSectionProps) {
+export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, onFileCountChange, onNewFilesChange }: InputsSectionProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // useOptimistic keeps localFiles in sync with the server `files` prop automatically
@@ -77,6 +78,15 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
   useEffect(() => {
     onFileCountChange?.(localFiles.length);
   }, [localFiles.length, onFileCountChange]);
+
+  // Notify parent when optimistic new-file count changes so stale banners
+  // disappear immediately when the last post-analysis file is deleted.
+  const newFileCount = lastAnalyzedAt
+    ? localFiles.filter((f) => f.created_at > lastAnalyzedAt).length
+    : 0;
+  useEffect(() => {
+    onNewFilesChange?.(newFileCount > 0);
+  }, [newFileCount, onNewFilesChange]);
 
   const included = lastAnalyzedAt
     ? localFiles.filter((f) => f.created_at <= lastAnalyzedAt)

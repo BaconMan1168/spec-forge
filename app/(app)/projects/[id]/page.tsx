@@ -129,7 +129,7 @@ export default async function ProjectPage({
         lastAnalyzedAt={lastAnalyzedAt}
         themesContent={
           cappedInsights.length > 0 ? (
-            <ThemesSection insights={cappedInsights} isStale={isStale} />
+            <ThemesSection insights={cappedInsights} />
           ) : (
             <LockedSection
               title="Themes unlock after analysis"
@@ -139,7 +139,7 @@ export default async function ProjectPage({
         }
         proposalsContent={
           cappedProposals.length > 0 ? (
-            <ProposalsSection proposals={cappedProposals} isStale={isStale} projectId={id} exportLimits={exportLimits} />
+            <ProposalsSection proposals={cappedProposals} projectId={id} exportLimits={exportLimits} />
           ) : (
             <LockedSection
               title="Proposals unlock after analysis"
