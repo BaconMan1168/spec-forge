@@ -25,9 +25,12 @@ const EXT_MIME: Record<string, string> = {
 };
 
 function resolveMimeType(file: File): string {
-  if (file.type) return file.type;
+  // application/octet-stream is a generic "unknown" fallback that some browsers
+  // and OS configurations report for .md and other text-adjacent file types.
+  // Treat it the same as an empty type and let the file extension take precedence.
+  if (file.type && file.type !== "application/octet-stream") return file.type;
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_MIME[ext] ?? "";
+  return EXT_MIME[ext] ?? file.type ?? "";
 }
 
 export type UploadResult = {
