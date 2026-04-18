@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type LimitResult = { allowed: boolean; reason: string };
+export type LimitResult = { allowed: boolean; reason: string; remaining?: number };
 
 const FREE_LIMITS = {
   projectsPerMonth: 2,
@@ -208,34 +208,39 @@ export async function canAddFile(userId: string, projectId: string): Promise<Lim
     .select("id", { count: "exact", head: true })
     .eq("project_id", projectId);
 
+  const current = count ?? 0;
+
   if (plan === "max") {
-    if ((count ?? 0) >= MAX_LIMITS.filesPerProject) {
+    if (current >= MAX_LIMITS.filesPerProject) {
       return {
         allowed: false,
         reason: `Max plan: ${MAX_LIMITS.filesPerProject} files per project`,
+        remaining: 0,
       };
     }
-    return { allowed: true, reason: "" };
+    return { allowed: true, reason: "", remaining: MAX_LIMITS.filesPerProject - current };
   }
 
   if (plan === "pro") {
-    if ((count ?? 0) >= PRO_LIMITS.filesPerProject) {
+    if (current >= PRO_LIMITS.filesPerProject) {
       return {
         allowed: false,
         reason: `Pro plan: ${PRO_LIMITS.filesPerProject} files per project — Upgrade to Max for up to 20`,
+        remaining: 0,
       };
     }
-    return { allowed: true, reason: "" };
+    return { allowed: true, reason: "", remaining: PRO_LIMITS.filesPerProject - current };
   }
 
   // free
-  if ((count ?? 0) >= FREE_LIMITS.filesPerProject) {
+  if (current >= FREE_LIMITS.filesPerProject) {
     return {
       allowed: false,
       reason: `Free plan: ${FREE_LIMITS.filesPerProject} files per project — Upgrade to Pro for up to 10`,
+      remaining: 0,
     };
   }
-  return { allowed: true, reason: "" };
+  return { allowed: true, reason: "", remaining: FREE_LIMITS.filesPerProject - current };
 }
 
 export async function canExport(
