@@ -10,9 +10,9 @@ export const ProposalOutputSchema = z.object({
   featureName: z.string().min(1),
   problemStatement: z.string().min(1),
   userEvidence: z.array(UserEvidenceSchema).min(1),
-  suggestedUiChanges: z.array(z.string().min(1)).min(1),
+  suggestedUiChanges: z.array(z.string().min(1)),
   suggestedDataModelChanges: z.array(z.string().min(1)),
-  suggestedWorkflowChanges: z.array(z.string().min(1)).min(1),
+  suggestedWorkflowChanges: z.array(z.string().min(1)),
   engineeringTasks: z.array(z.string().min(1)).min(1),
 });
 

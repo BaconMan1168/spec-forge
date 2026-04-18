@@ -36,8 +36,9 @@ export async function generateProposals(themes: Theme[]): Promise<ProposalOutput
   // to O(1) (bounded by the single slowest call). The cached system prompt is
   // written on the first streaming response and read by subsequent analysis runs.
   const settled = await Promise.allSettled(
-    themes.map((theme) =>
-      generateObject({
+    themes.map((theme, index) => {
+      const start = Date.now();
+      return generateObject({
         model: anthropic(env.AI_MODEL),
         schema: ProposalOutputSchema,
         messages: [
@@ -53,9 +54,35 @@ export async function generateProposals(themes: Theme[]): Promise<ProposalOutput
             content: buildProposalPrompt(theme),
           },
         ],
-      }).then((r) => r.object)
-    )
+      })
+        .then((r) => {
+          console.log(`[proposals] proposal[${index}] "${theme.themeName}" done in ${Date.now() - start}ms`);
+          return r.object;
+        })
+        .catch((err) => {
+          console.error(
+            `[proposals] proposal[${index}] "${theme.themeName}" FAILED after ${Date.now() - start}ms:`,
+            err
+          );
+          throw err;
+        });
+    })
   );
+
+  // Log any failures with full details
+  settled.forEach((r, index) => {
+    if (r.status === "rejected") {
+      console.error(
+        `[proposals] settled[${index}] rejected — theme: "${themes[index]?.themeName}":`,
+        r.reason
+      );
+    }
+  });
+
+  const failedCount = settled.filter((r) => r.status === "rejected").length;
+  if (failedCount > 0) {
+    console.error(`[proposals] ${failedCount} of ${themes.length} proposal(s) failed`);
+  }
 
   // Per spec: skip failed proposals, keep the rest
   return settled
