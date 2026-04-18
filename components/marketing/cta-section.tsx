@@ -93,8 +93,6 @@ export function CtaSection({ isAuthenticated = false }: { isAuthenticated?: bool
         <nav className="flex gap-7 text-[13px] text-[var(--color-text-tertiary)]">
           <Link href="/" className="transition-colors duration-[180ms] hover:text-[var(--color-text-secondary)]">Home</Link>
           <Link href="/pricing" className="transition-colors duration-[180ms] hover:text-[var(--color-text-secondary)]">Pricing</Link>
-          <span className="cursor-default">Privacy</span>
-          <span className="cursor-default">Terms</span>
         </nav>
         <p className="text-[12px] text-[hsl(220_6%_32%)]">
           © 2026 Xern AI. All rights reserved.
