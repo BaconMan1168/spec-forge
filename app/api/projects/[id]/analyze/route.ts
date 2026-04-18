@@ -7,7 +7,7 @@ import {
 } from "@/app/actions/analysis";
 import { canAnalyzeProject } from "@/lib/billing/limits";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const RATE_LIMIT = 5; // max runs per hour per user
 
@@ -75,12 +75,16 @@ export async function POST(
     );
   }
 
+  const routeStart = Date.now();
   try {
     // Stage 1: Synthesize themes
+    const synthStart = Date.now();
     const { themes } = await synthesize(files);
+    console.log(`[analyze] synthesize() done in ${Date.now() - synthStart}ms — ${themes.length} theme(s)`);
 
     // Insufficient signal — persist empty results and return early
     if (themes.length === 0) {
+      const persistStart = Date.now();
       await persistAnalysisResults({
         projectId,
         userId: user.id,
@@ -88,13 +92,18 @@ export async function POST(
         proposals: [],
         inputCount: files.length,
       });
+      console.log(`[analyze] persistAnalysisResults (empty) done in ${Date.now() - persistStart}ms`);
+      console.log(`[analyze] total route duration: ${Date.now() - routeStart}ms`);
       return Response.json({ signal: "insufficient", insightCount: 0, proposalCount: 0 });
     }
 
     // Stage 2: Generate proposals (up to 5, one per theme)
+    const proposalsStart = Date.now();
     const proposals = await generateProposals(themes.slice(0, 5));
+    console.log(`[analyze] generateProposals() done in ${Date.now() - proposalsStart}ms — ${proposals.length}/${themes.slice(0, 5).length} succeeded`);
 
     // Persist results (overwrites previous)
+    const persistStart = Date.now();
     await persistAnalysisResults({
       projectId,
       userId: user.id,
@@ -102,13 +111,16 @@ export async function POST(
       proposals,
       inputCount: files.length,
     });
+    console.log(`[analyze] persistAnalysisResults done in ${Date.now() - persistStart}ms`);
 
+    console.log(`[analyze] total route duration: ${Date.now() - routeStart}ms`);
     return Response.json({
       signal: "ok",
       insightCount: themes.length,
       proposalCount: proposals.length,
     });
-  } catch {
+  } catch (err) {
+    console.error(`[analyze] FATAL ERROR after ${Date.now() - routeStart}ms:`, err);
     return Response.json(
       { error: { code: "MODEL_ERROR", message: "Analysis failed. Please try again." } },
       { status: 500 }

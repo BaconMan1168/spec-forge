@@ -28,9 +28,11 @@ export async function persistAnalysisResults({
 }): Promise<void> {
   const supabase = await createClient();
 
-  // Overwrite: delete existing insights and proposals
-  await supabase.from("insights").delete().eq("project_id", projectId);
-  await supabase.from("proposals").delete().eq("project_id", projectId);
+  // Overwrite: delete existing insights and proposals (parallel)
+  await Promise.all([
+    supabase.from("insights").delete().eq("project_id", projectId),
+    supabase.from("proposals").delete().eq("project_id", projectId),
+  ]);
 
   // Insert new insights
   if (themes.length > 0) {
