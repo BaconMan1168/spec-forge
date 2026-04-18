@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { FeedbackFile } from "@/lib/types/database";
+import type { LimitResult } from "@/lib/billing/limits";
 import { deleteFeedbackBatch } from "@/app/actions/feedback-files";
 import { BatchCard, type BatchGroup } from "./batch-card";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 
 function groupFilesByLabel(files: FeedbackFile[]): BatchGroup[] {
   const map = new Map<string, FeedbackFile[]>();
@@ -55,12 +58,18 @@ interface InputsSectionProps {
   files: FeedbackFile[];
   projectId: string;
   lastAnalyzedAt?: string | null;
+  canAddFile?: LimitResult;
 }
 
-export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectionProps) {
+export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: InputsSectionProps) {
   const router = useRouter();
-  const [localFiles, setLocalFiles] = useState(files);
   const [isPending, startTransition] = useTransition();
+  // useOptimistic keeps localFiles in sync with the server `files` prop automatically
+  // after the transition completes, so no manual useEffect sync is needed.
+  const [localFiles, applyOptimisticDelete] = useOptimistic(
+    files,
+    (current, sourceLabel: string) => current.filter((f) => f.source_type !== sourceLabel)
+  );
 
   const included = lastAnalyzedAt
     ? localFiles.filter((f) => f.created_at <= lastAnalyzedAt)
@@ -75,27 +84,17 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
 
   const handleDelete = (sourceLabel: string) => {
     startTransition(async () => {
+      applyOptimisticDelete(sourceLabel);
       await deleteFeedbackBatch(projectId, sourceLabel);
-      const remaining = localFiles.filter((f) => f.source_type !== sourceLabel);
-      setLocalFiles(remaining);
-      // If the deleted batch was in the "new" (post-analysis) group, check whether
-      // any new files remain. If not, refresh so the server recomputes isStale and
-      // the Re-analyze badge/button clears correctly.
-      if (lastAnalyzedAt) {
-        const stillHasNewFiles = remaining.some((f) => f.created_at > lastAnalyzedAt);
-        if (!stillHasNewFiles) {
-          router.refresh();
-        }
-      }
+      // Refresh so server-rendered counts (stats row, canAddFile state) stay in sync.
+      router.refresh();
     });
   };
 
-  const addMoreLink = (
-    <Link
-      href={`/projects/${projectId}/add`}
-      aria-label="Add more inputs"
-      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
-    >
+  const limitHit = canAddFile !== undefined && !canAddFile.allowed;
+
+  const addMoreCardContent = (
+    <>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-[var(--color-surface-1)] text-[var(--color-text-tertiary)]">
         <Plus size={15} strokeWidth={2} />
       </div>
@@ -103,12 +102,46 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
         <div className="text-sm text-[var(--color-text-secondary)]">Add more inputs</div>
         <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">Upload files or paste text</div>
       </div>
+    </>
+  );
+
+  const addMoreLink = limitHit ? (
+    <PlanLimitTooltip
+      allowed={false}
+      reason={canAddFile!.reason}
+      title="Upload limit reached"
+    >
+      <div
+        aria-label="Add more inputs"
+        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5"
+      >
+        {addMoreCardContent}
+      </div>
+    </PlanLimitTooltip>
+  ) : (
+    <Link
+      href={`/projects/${projectId}/add`}
+      aria-label="Add more inputs"
+      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
+    >
+      {addMoreCardContent}
     </Link>
+  );
+
+  const inputsHeader = (
+    <div className="mb-4 flex items-center gap-2">
+      <FileText size={15} strokeWidth={1.8} className="text-[var(--color-text-secondary)]" />
+      <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">Inputs</span>
+      <span className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
+        {localFiles.length} {localFiles.length === 1 ? "file" : "files"}
+      </span>
+    </div>
   );
 
   if (!lastAnalyzedAt) {
     return (
       <div className="flex flex-col gap-2">
+        {inputsHeader}
         {allBatches.length === 0 ? (
           <p className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
             No inputs yet.
@@ -143,6 +176,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
 
   return (
     <div className="flex flex-col gap-2">
+      {inputsHeader}
       {localFiles.length === 0 ? (
         <p className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
           No inputs yet.

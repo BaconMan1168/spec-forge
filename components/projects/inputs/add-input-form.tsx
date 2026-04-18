@@ -13,7 +13,6 @@ import {
   pasteFeedbackText,
   type UploadResult,
 } from "@/app/actions/feedback-files";
-import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 import type { LimitResult } from "@/lib/billing/limits";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -207,8 +206,8 @@ export function AddInputForm({
                 onSourceLabelChange={setSourceLabel}
                 sourceLabelError={sourceLabelError}
                 onBack={goToStep1}
-                onSubmit={canAddFile.allowed ? handleSubmit : () => {}}
-                isSubmitting={isPending || !canAddFile.allowed}
+                onSubmit={handleSubmit}
+                isSubmitting={isPending}
               />
             ) : (
               <StepUpload
@@ -218,22 +217,10 @@ export function AddInputForm({
                 onSourceLabelChange={setSourceLabel}
                 sourceLabelError={sourceLabelError}
                 onBack={goToStep1}
-                onSubmit={canAddFile.allowed ? handleSubmit : () => {}}
-                isSubmitting={isPending || !canAddFile.allowed}
+                onSubmit={handleSubmit}
+                isSubmitting={isPending}
+                remaining={canAddFile.remaining}
               />
-            )}
-            {step === 2 && !canAddFile.allowed && (
-              <div className="mt-3 flex justify-end">
-                <PlanLimitTooltip allowed={canAddFile.allowed} reason={canAddFile.reason}>
-                  <Button
-                    size="sm"
-                    disabled={isPending || !canAddFile.allowed}
-                    onClick={canAddFile.allowed ? handleSubmit : undefined}
-                  >
-                    Upload
-                  </Button>
-                </PlanLimitTooltip>
-              </div>
             )}
           </motion.div>
         </AnimatePresence>

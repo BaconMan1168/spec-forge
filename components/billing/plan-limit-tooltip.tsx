@@ -8,6 +8,8 @@ import { AnimatePresence, motion } from "motion/react";
 interface PlanLimitTooltipProps {
   allowed: boolean;
   reason: string;
+  /** Optional bold header shown above the reason, e.g. "Upload limit reached" */
+  title?: string;
   children: React.ReactNode;
 }
 
@@ -17,7 +19,7 @@ const TOOLTIP_TRANSITION = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
-export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltipProps) {
+export function PlanLimitTooltip({ allowed, reason, title, children }: PlanLimitTooltipProps) {
   const [visible, setVisible] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,8 +50,12 @@ export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltip
     return child;
   });
 
-  const hasUpgradeLink = reason.includes("→");
-  const reasonText = hasUpgradeLink ? reason.replace("→", "").trim() : reason;
+  // Split "Free plan: 5 files per project — Upgrade to Pro for up to 10" into
+  // planInfo = "Free plan: 5 files per project"
+  // upgradeText = "Upgrade to Pro for up to 10"
+  const dashIdx = reason.indexOf(" — ");
+  const planInfo = dashIdx !== -1 ? reason.slice(0, dashIdx) : reason;
+  const upgradeText = dashIdx !== -1 ? reason.slice(dashIdx + 3) : null;
 
   return (
     <div
@@ -61,11 +67,12 @@ export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltip
 
       {/* Always-in-DOM version for screen readers and tests */}
       <div role="tooltip" className="sr-only">
-        <p>{reasonText}</p>
-        {hasUpgradeLink && <span>Upgrade to Pro</span>}
+        {title && <p>{title}</p>}
+        <p>{planInfo}</p>
+        {upgradeText && <span>{upgradeText}</span>}
       </div>
 
-      {/* Animated tooltip — renders below the button to avoid navbar clipping */}
+      {/* Animated tooltip — renders to the left of the trigger */}
       <AnimatePresence>
         {visible && (
           <motion.div
@@ -78,15 +85,20 @@ export function PlanLimitTooltip({ allowed, reason, children }: PlanLimitTooltip
             exit={{ opacity: 0, scale: 0.95, x: 4 }}
             transition={TOOLTIP_TRANSITION}
           >
-            <p className="mb-1 text-[12px] font-semibold text-[var(--color-text-primary)]">
-              {reasonText}
+            {title && (
+              <p className="mb-1 text-[12px] font-semibold text-[var(--color-text-primary)]">
+                {title}
+              </p>
+            )}
+            <p className={`text-[11px] text-[var(--color-text-secondary)] ${title ? "" : "mb-1 font-semibold text-[var(--color-text-primary)] text-[12px]"}`}>
+              {planInfo}
             </p>
-            {hasUpgradeLink && (
+            {upgradeText && (
               <Link
                 href="/pricing"
-                className="text-[12px] font-semibold text-[var(--color-accent-primary)] hover:underline"
+                className="mt-1.5 inline-block text-[11px] font-semibold text-[var(--color-accent-primary)] hover:underline"
               >
-                Upgrade to Pro →
+                {upgradeText} →
               </Link>
             )}
           </motion.div>

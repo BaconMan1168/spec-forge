@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { InputsSection } from "@/components/projects/workspace/inputs-section";
 import { LockedSection } from "@/components/projects/workspace/locked-section";
@@ -11,7 +11,8 @@ import { ThemesSection } from "@/components/projects/workspace/themes-section";
 import { ProposalsSection } from "@/components/projects/workspace/proposals-section";
 import { getFeedbackFiles } from "@/app/actions/feedback-files";
 import { getInsights, getProposals, getLastAnalysisRun } from "@/app/actions/analysis";
-import { canRerunAnalysis, canExport } from "@/lib/billing/limits";
+import { canAddFile, canRerunAnalysis, canExport } from "@/lib/billing/limits";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 import type { Project } from "@/lib/types/database";
 
 export default async function ProjectPage({
@@ -43,6 +44,10 @@ export default async function ProjectPage({
 
   const canRerun = user
     ? await canRerunAnalysis(user.id)
+    : { allowed: false, reason: "Not authenticated" };
+
+  const canAddFileResult = user
+    ? await canAddFile(user.id, id)
     : { allowed: false, reason: "Not authenticated" };
 
   const exportLimits: Record<string, { allowed: boolean; reason: string }> = {};
@@ -121,38 +126,35 @@ export default async function ProjectPage({
         proposalsCount={proposals.length}
         canRerun={canRerun}
         addInputsButton={
-          <Link
-            href={`/projects/${id}/add`}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
-          >
-            <Plus size={13} />
-            Add inputs
-          </Link>
+          canAddFileResult.allowed ? (
+            <Link
+              href={`/projects/${id}/add`}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+            >
+              <Plus size={13} />
+              Add inputs
+            </Link>
+          ) : (
+            <PlanLimitTooltip
+              allowed={false}
+              reason={canAddFileResult.reason}
+              title="Upload limit reached"
+            >
+              <button className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
+                <Plus size={13} />
+                Add inputs
+              </button>
+            </PlanLimitTooltip>
+          )
         }
         inputsSection={
           <div className="py-7">
             <ScrollReveal delay={0}>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText
-                    size={15}
-                    strokeWidth={1.8}
-                    className="text-[var(--color-text-secondary)]"
-                  />
-                  <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    Inputs
-                  </span>
-                  <span className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
-                    {feedbackFiles.length} files
-                  </span>
-                </div>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal delay={80}>
               <InputsSection
                 files={feedbackFiles}
                 projectId={id}
                 lastAnalyzedAt={lastAnalyzedAt}
+                canAddFile={canAddFileResult}
               />
             </ScrollReveal>
           </div>
