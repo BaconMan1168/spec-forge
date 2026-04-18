@@ -148,7 +148,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
           </p>
         ) : (
           <div
-            className="flex flex-col gap-2 overflow-y-auto py-1 px-2"
+            className="flex flex-col gap-2 overflow-y-auto py-2 px-3"
             style={{
               maxHeight: "212px",
               maskImage:
@@ -216,7 +216,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
                 </span>
               </div>
               {newBatches.map((batch) => (
-                <div key={batch.sourceLabel} className="rounded-[var(--radius-md)] border border-[hsl(40_40%_28%)] bg-[hsl(40_20%_12%)]">
+                <div key={batch.sourceLabel} className="rounded-[var(--radius-lg)] overflow-hidden border border-[hsl(40_40%_28%)]">
                   <BatchCard
                     batch={batch}
                     onDelete={() => handleDelete(batch.sourceLabel)}

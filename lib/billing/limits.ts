@@ -108,7 +108,7 @@ export async function canAnalyzeProject(
     if (plan === "free") {
       return {
         allowed: false,
-        reason: "Re-run analysis is a Pro feature — Upgrade to Pro →",
+        reason: "Re-run analysis is a Pro feature — Upgrade to Pro",
       };
     }
     return { allowed: true, reason: "" };
