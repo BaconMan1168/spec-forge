@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { FeedbackFile } from "@/lib/types/database";
 import type { LimitResult } from "@/lib/billing/limits";
@@ -62,8 +63,13 @@ interface InputsSectionProps {
 
 export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: InputsSectionProps) {
   const router = useRouter();
-  const [localFiles, setLocalFiles] = useState(files);
   const [isPending, startTransition] = useTransition();
+  // useOptimistic keeps localFiles in sync with the server `files` prop automatically
+  // after the transition completes, so no manual useEffect sync is needed.
+  const [localFiles, applyOptimisticDelete] = useOptimistic(
+    files,
+    (current, sourceLabel: string) => current.filter((f) => f.source_type !== sourceLabel)
+  );
 
   const included = lastAnalyzedAt
     ? localFiles.filter((f) => f.created_at <= lastAnalyzedAt)
@@ -78,18 +84,10 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
 
   const handleDelete = (sourceLabel: string) => {
     startTransition(async () => {
+      applyOptimisticDelete(sourceLabel);
       await deleteFeedbackBatch(projectId, sourceLabel);
-      const remaining = localFiles.filter((f) => f.source_type !== sourceLabel);
-      setLocalFiles(remaining);
-      // If the deleted batch was in the "new" (post-analysis) group, check whether
-      // any new files remain. If not, refresh so the server recomputes isStale and
-      // the Re-analyze badge/button clears correctly.
-      if (lastAnalyzedAt) {
-        const stillHasNewFiles = remaining.some((f) => f.created_at > lastAnalyzedAt);
-        if (!stillHasNewFiles) {
-          router.refresh();
-        }
-      }
+      // Refresh so server-rendered counts (stats row, canAddFile state) stay in sync.
+      router.refresh();
     });
   };
 
@@ -130,9 +128,20 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
     </Link>
   );
 
+  const inputsHeader = (
+    <div className="mb-4 flex items-center gap-2">
+      <FileText size={15} strokeWidth={1.8} className="text-[var(--color-text-secondary)]" />
+      <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">Inputs</span>
+      <span className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
+        {localFiles.length} {localFiles.length === 1 ? "file" : "files"}
+      </span>
+    </div>
+  );
+
   if (!lastAnalyzedAt) {
     return (
       <div className="flex flex-col gap-2">
+        {inputsHeader}
         {allBatches.length === 0 ? (
           <p className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
             No inputs yet.
@@ -167,6 +176,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: 
 
   return (
     <div className="flex flex-col gap-2">
+      {inputsHeader}
       {localFiles.length === 0 ? (
         <p className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
           No inputs yet.

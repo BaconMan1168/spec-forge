@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { InputsSection } from "@/components/projects/workspace/inputs-section";
 import { LockedSection } from "@/components/projects/workspace/locked-section";
@@ -150,23 +150,6 @@ export default async function ProjectPage({
         inputsSection={
           <div className="py-7">
             <ScrollReveal delay={0}>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText
-                    size={15}
-                    strokeWidth={1.8}
-                    className="text-[var(--color-text-secondary)]"
-                  />
-                  <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    Inputs
-                  </span>
-                  <span className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
-                    {feedbackFiles.length} files
-                  </span>
-                </div>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal delay={80}>
               <InputsSection
                 files={feedbackFiles}
                 projectId={id}
