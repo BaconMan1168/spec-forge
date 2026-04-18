@@ -135,7 +135,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
     >
       <div
         aria-label="Add more inputs"
-        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5"
+        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 shadow-none"
       >
         {addMoreCardContent}
       </div>
@@ -144,7 +144,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
     <Link
       href={`/projects/${projectId}/add`}
       aria-label="Add more inputs"
-      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
+      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 shadow-none transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
     >
       {addMoreCardContent}
     </Link>
