@@ -54,12 +54,16 @@ export default async function ProjectPage({
     );
   }
 
+  // Hard cap at 5 regardless of what the AI returned.
+  const cappedInsights = insights.slice(0, 5);
+  const cappedProposals = proposals.slice(0, 5);
+
   const hasInputs = feedbackFiles.length > 0;
   const lastAnalyzedAt = lastRun?.created_at ?? null;
   const isStale = lastAnalyzedAt
     ? feedbackFiles.some((f) => f.created_at > lastAnalyzedAt)
     : false;
-  const hasResults = insights.length > 0 || proposals.length > 0;
+  const hasResults = cappedInsights.length > 0 || cappedProposals.length > 0;
 
   return (
     <div className="mx-auto max-w-[820px]">
@@ -73,13 +77,13 @@ export default async function ProjectPage({
             { label: "Inputs", value: feedbackFiles.length },
             {
               label: "Themes",
-              value: insights.length > 0 ? insights.length : "—",
-              accent: insights.length > 0,
+              value: cappedInsights.length > 0 ? cappedInsights.length : "—",
+              accent: cappedInsights.length > 0,
             },
             {
               label: "Proposals",
-              value: proposals.length > 0 ? proposals.length : "—",
-              accent: proposals.length > 0,
+              value: cappedProposals.length > 0 ? cappedProposals.length : "—",
+              accent: cappedProposals.length > 0,
             },
           ].map(({ label, value, accent }, i, arr) => (
             <div key={label} className="flex items-center gap-4">
@@ -117,15 +121,15 @@ export default async function ProjectPage({
         hasInputs={hasInputs}
         isStale={isStale}
         hasResults={hasResults}
-        insightsCount={insights.length}
-        proposalsCount={proposals.length}
+        insightsCount={cappedInsights.length}
+        proposalsCount={cappedProposals.length}
         canAddFileResult={canAddFileResult}
         canRerun={canRerun}
         files={feedbackFiles}
         lastAnalyzedAt={lastAnalyzedAt}
         themesContent={
-          insights.length > 0 ? (
-            <ThemesSection insights={insights} isStale={isStale} />
+          cappedInsights.length > 0 ? (
+            <ThemesSection insights={cappedInsights} isStale={isStale} />
           ) : (
             <LockedSection
               title="Themes unlock after analysis"
@@ -134,8 +138,8 @@ export default async function ProjectPage({
           )
         }
         proposalsContent={
-          proposals.length > 0 ? (
-            <ProposalsSection proposals={proposals} isStale={isStale} projectId={id} exportLimits={exportLimits} />
+          cappedProposals.length > 0 ? (
+            <ProposalsSection proposals={cappedProposals} isStale={isStale} projectId={id} exportLimits={exportLimits} />
           ) : (
             <LockedSection
               title="Proposals unlock after analysis"
