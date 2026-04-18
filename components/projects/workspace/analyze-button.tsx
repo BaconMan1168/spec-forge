@@ -11,8 +11,8 @@ interface AnalyzeButtonProps {
   projectId: string;
   hasInputs: boolean;
   isStale: boolean;
-  hasResults: boolean;
-  canRerun: LimitResult;
+  hasResults?: boolean;
+  canRerun?: LimitResult;
   onAnalyzingChange?: (isAnalyzing: boolean) => void;
 }
 
@@ -20,8 +20,8 @@ export function AnalyzeButton({
   projectId,
   hasInputs,
   isStale,
-  hasResults,
-  canRerun,
+  hasResults = false,
+  canRerun = { allowed: true, reason: "" },
   onAnalyzingChange,
 }: AnalyzeButtonProps) {
   const router = useRouter();
