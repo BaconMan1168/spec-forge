@@ -204,29 +204,33 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
           No inputs yet.
         </p>
       ) : (
-        <div
-          className="flex flex-col gap-2 overflow-y-auto py-1 px-2"
-          style={{
-            maxHeight: "260px",
-            maskImage:
-              "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-            scrollbarWidth: "thin",
-          }}
-        >
-          {includedBatches.map((batch) => (
-            <BatchCard
-              key={batch.sourceLabel}
-              batch={batch}
-              onDelete={() => handleDelete(batch.sourceLabel)}
-              isDeleting={isPending}
-              projectId={projectId}
-            />
-          ))}
+        <>
+          {includedBatches.length > 0 && (
+            <div
+              className="flex flex-col gap-2 overflow-y-auto py-2 px-3"
+              style={{
+                maxHeight: "212px",
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+                scrollbarWidth: "thin",
+              }}
+            >
+              {includedBatches.map((batch) => (
+                <BatchCard
+                  key={batch.sourceLabel}
+                  batch={batch}
+                  onDelete={() => handleDelete(batch.sourceLabel)}
+                  isDeleting={isPending}
+                  projectId={projectId}
+                />
+              ))}
+            </div>
+          )}
 
           {newBatches.length > 0 && (
-            <>
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 border-t border-dashed border-[var(--color-border-subtle)] pt-3">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[hsl(40_70%_55%)]">
                   <circle cx="12" cy="12" r="10" />
@@ -247,9 +251,9 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
                   />
                 </div>
               ))}
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
       {addMoreLink}
     </div>
