@@ -38,6 +38,20 @@ function buildUserPrompt(files: FeedbackFile[]): string {
   return `Analyze the following ${files.length} feedback input(s) and identify recurring themes:\n\n${sections}`;
 }
 
+/**
+ * Corrects an AI-generated frequency string so the numerator never exceeds the
+ * actual source count. The expected format is "X of Y sources". If the
+ * numerator is larger than `totalSources`, it is clamped.
+ *
+ * Example: fixFrequency("5 of 4 sources", 4) → "4 of 4 sources"
+ */
+function fixFrequency(frequency: string, totalSources: number): string {
+  const match = frequency.match(/^(\d+)\s+of\s+(\d+)\s+sources?$/i);
+  if (!match) return frequency;
+  const numerator = Math.min(parseInt(match[1], 10), totalSources);
+  return `${numerator} of ${totalSources} sources`;
+}
+
 export async function synthesize(files: FeedbackFile[]): Promise<SynthesisResult> {
   const { object } = await generateObject({
     model: anthropic(env.AI_MODEL),
@@ -57,5 +71,11 @@ export async function synthesize(files: FeedbackFile[]): Promise<SynthesisResult
     ],
   });
 
-  return object;
+  // Correct any frequency strings where the AI overcounted supporting sources.
+  return {
+    themes: object.themes.map((theme) => ({
+      ...theme,
+      frequency: fixFrequency(theme.frequency, files.length),
+    })),
+  };
 }
