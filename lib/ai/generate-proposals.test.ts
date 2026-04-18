@@ -47,7 +47,7 @@ describe("generateProposals", () => {
     expect(generateObject).toHaveBeenCalledOnce();
   });
 
-  it("calls model sequentially for multiple themes", async () => {
+  it("calls model for each theme (parallel)", async () => {
     (generateObject as ReturnType<typeof vi.fn>).mockResolvedValue({
       object: mockProposalObject,
     });

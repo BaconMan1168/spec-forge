@@ -42,8 +42,19 @@ export async function synthesize(files: FeedbackFile[]): Promise<SynthesisResult
   const { object } = await generateObject({
     model: anthropic(env.AI_MODEL),
     schema: SynthesisResultSchema,
-    system: SYSTEM_PROMPT,
-    prompt: buildUserPrompt(files),
+    messages: [
+      {
+        role: "system",
+        content: SYSTEM_PROMPT,
+        providerOptions: {
+          anthropic: { cacheControl: { type: "ephemeral" } },
+        },
+      },
+      {
+        role: "user",
+        content: buildUserPrompt(files),
+      },
+    ],
   });
 
   return object;
