@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { FeedbackFile } from "@/lib/types/database";
+import type { LimitResult } from "@/lib/billing/limits";
 import { deleteFeedbackBatch } from "@/app/actions/feedback-files";
 import { BatchCard, type BatchGroup } from "./batch-card";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 
 function groupFilesByLabel(files: FeedbackFile[]): BatchGroup[] {
   const map = new Map<string, FeedbackFile[]>();
@@ -55,9 +57,10 @@ interface InputsSectionProps {
   files: FeedbackFile[];
   projectId: string;
   lastAnalyzedAt?: string | null;
+  canAddFile?: LimitResult;
 }
 
-export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectionProps) {
+export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile }: InputsSectionProps) {
   const router = useRouter();
   const [localFiles, setLocalFiles] = useState(files);
   const [isPending, startTransition] = useTransition();
@@ -90,12 +93,10 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
     });
   };
 
-  const addMoreLink = (
-    <Link
-      href={`/projects/${projectId}/add`}
-      aria-label="Add more inputs"
-      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
-    >
+  const limitHit = canAddFile !== undefined && !canAddFile.allowed;
+
+  const addMoreCardContent = (
+    <>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-[var(--color-surface-1)] text-[var(--color-text-tertiary)]">
         <Plus size={15} strokeWidth={2} />
       </div>
@@ -103,6 +104,29 @@ export function InputsSection({ files, projectId, lastAnalyzedAt }: InputsSectio
         <div className="text-sm text-[var(--color-text-secondary)]">Add more inputs</div>
         <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">Upload files or paste text</div>
       </div>
+    </>
+  );
+
+  const addMoreLink = limitHit ? (
+    <PlanLimitTooltip
+      allowed={false}
+      reason={canAddFile!.reason}
+      title="Upload limit reached"
+    >
+      <div
+        aria-label="Add more inputs"
+        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5"
+      >
+        {addMoreCardContent}
+      </div>
+    </PlanLimitTooltip>
+  ) : (
+    <Link
+      href={`/projects/${projectId}/add`}
+      aria-label="Add more inputs"
+      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
+    >
+      {addMoreCardContent}
     </Link>
   );
 

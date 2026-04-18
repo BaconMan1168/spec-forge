@@ -11,7 +11,8 @@ import { ThemesSection } from "@/components/projects/workspace/themes-section";
 import { ProposalsSection } from "@/components/projects/workspace/proposals-section";
 import { getFeedbackFiles } from "@/app/actions/feedback-files";
 import { getInsights, getProposals, getLastAnalysisRun } from "@/app/actions/analysis";
-import { canRerunAnalysis, canExport } from "@/lib/billing/limits";
+import { canAddFile, canRerunAnalysis, canExport } from "@/lib/billing/limits";
+import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
 import type { Project } from "@/lib/types/database";
 
 export default async function ProjectPage({
@@ -43,6 +44,10 @@ export default async function ProjectPage({
 
   const canRerun = user
     ? await canRerunAnalysis(user.id)
+    : { allowed: false, reason: "Not authenticated" };
+
+  const canAddFileResult = user
+    ? await canAddFile(user.id, id)
     : { allowed: false, reason: "Not authenticated" };
 
   const exportLimits: Record<string, { allowed: boolean; reason: string }> = {};
@@ -121,13 +126,26 @@ export default async function ProjectPage({
         proposalsCount={proposals.length}
         canRerun={canRerun}
         addInputsButton={
-          <Link
-            href={`/projects/${id}/add`}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
-          >
-            <Plus size={13} />
-            Add inputs
-          </Link>
+          canAddFileResult.allowed ? (
+            <Link
+              href={`/projects/${id}/add`}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+            >
+              <Plus size={13} />
+              Add inputs
+            </Link>
+          ) : (
+            <PlanLimitTooltip
+              allowed={false}
+              reason={canAddFileResult.reason}
+              title="Upload limit reached"
+            >
+              <button className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
+                <Plus size={13} />
+                Add inputs
+              </button>
+            </PlanLimitTooltip>
+          )
         }
         inputsSection={
           <div className="py-7">
@@ -153,6 +171,7 @@ export default async function ProjectPage({
                 files={feedbackFiles}
                 projectId={id}
                 lastAnalyzedAt={lastAnalyzedAt}
+                canAddFile={canAddFileResult}
               />
             </ScrollReveal>
           </div>
