@@ -43,6 +43,7 @@ export async function persistAnalysisResults({
         frequency: t.frequency,
         quotes: t.quotes,
         signal_strength: t.signalStrength,
+        has_conflict: t.hasConflict,
       }))
     );
   }
@@ -59,6 +60,7 @@ export async function persistAnalysisResults({
         data_model_changes: p.suggestedDataModelChanges,
         workflow_changes: p.suggestedWorkflowChanges,
         engineering_tasks: p.engineeringTasks,
+        is_conflict_proposal: p.isConflictProposal,
       }))
     );
   }

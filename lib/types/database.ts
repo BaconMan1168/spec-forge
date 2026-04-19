@@ -35,6 +35,7 @@ export type Insight = {
   frequency: string;
   quotes: InsightQuote[];
   signal_strength: "high" | "medium" | "low" | null;
+  has_conflict: boolean;
   created_at: string;
 };
 
@@ -53,5 +54,6 @@ export type Proposal = {
   data_model_changes: string[];
   workflow_changes: string[];
   engineering_tasks: string[];
+  is_conflict_proposal: boolean;
   created_at: string;
 };
