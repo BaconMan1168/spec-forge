@@ -8,6 +8,7 @@ export type Project = {
   name: string;
   created_at: string;
   updated_at: string;
+  expires_at: string | null;
 };
 
 export type FeedbackFile = {

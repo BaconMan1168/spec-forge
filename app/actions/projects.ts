@@ -4,7 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { canCreateProject } from "@/lib/billing/limits";
+import { canCreateProject, getUserPlan } from "@/lib/billing/limits";
 
 export async function createProject(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
@@ -24,9 +24,16 @@ export async function createProject(formData: FormData) {
     throw new Error(limitResult.reason);
   }
 
+  const plan = await getUserPlan(user.id);
+  // Free-plan projects expire after 7 days; paid plans have indefinite persistence.
+  const expiresAt =
+    plan === "free"
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
   const { data, error } = await supabase
     .from("projects")
-    .insert({ name, user_id: user.id })
+    .insert({ name, user_id: user.id, expires_at: expiresAt })
     .select("id")
     .single();
 

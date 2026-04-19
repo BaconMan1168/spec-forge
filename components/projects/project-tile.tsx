@@ -36,15 +36,28 @@ const BACKDROP_TRANSITION = {
   ease: "easeOut" as const,
 };
 
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+function getExpiryWarning(expiresAt: string | null): string | null {
+  if (!expiresAt) return null;
+  const msLeft = new Date(expiresAt).getTime() - Date.now();
+  if (msLeft <= 0) return null; // already expired (cleanup pending)
+  if (msLeft > THREE_DAYS_MS) return null;
+  const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+  return daysLeft <= 1 ? "Expires today" : `Expires in ${daysLeft} days`;
+}
+
 type ProjectTileProps = {
   id: string;
   name: string;
   createdAt: string;
+  expiresAt: string | null;
   index: number;
 };
 
-export function ProjectTile({ id, name, createdAt, index }: ProjectTileProps) {
+export function ProjectTile({ id, name, createdAt, expiresAt, index }: ProjectTileProps) {
   const iconColor = ICON_COLORS[index % ICON_COLORS.length];
+  const expiryWarning = getExpiryWarning(expiresAt);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isClient = useIsClient();
@@ -92,6 +105,29 @@ export function ProjectTile({ id, name, createdAt, index }: ProjectTileProps) {
                 day: "numeric",
               })}
             </p>
+
+            {/* Expiry warning (free plan, ≤3 days remaining) */}
+            {expiryWarning && (
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-pill)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-2.5 py-0.5 text-[11px] font-semibold text-[hsl(40_70%_65%)]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                {expiryWarning}
+              </span>
+            )}
           </MagicCard>
         </Link>
 
