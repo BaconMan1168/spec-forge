@@ -10,6 +10,8 @@ export const ThemeSchema = z.object({
   // Human-readable signal per data-model.md ("simple user-readable signal in MVP")
   frequency: z.string().min(1),
   quotes: z.array(QuoteSchema).min(1),
+  // AI self-assessment of evidence quality for this theme
+  signalStrength: z.enum(["high", "medium", "low"]),
 });
 
 export const SynthesisOutputSchema = z.object({

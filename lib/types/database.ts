@@ -34,6 +34,7 @@ export type Insight = {
   theme_name: string;
   frequency: string;
   quotes: InsightQuote[];
+  signal_strength: "high" | "medium" | "low" | null;
   created_at: string;
 };
 

@@ -8,7 +8,7 @@ import { render, screen } from "@testing-library/react";
 import { ThemesSection } from "./themes-section";
 import type { Insight } from "@/lib/types/database";
 
-const makeInsight = (id: string, themeName: string): Insight => ({
+const makeInsight = (id: string, themeName: string, signal_strength: Insight["signal_strength"] = null): Insight => ({
   id,
   project_id: "p1",
   theme_name: themeName,
@@ -17,6 +17,7 @@ const makeInsight = (id: string, themeName: string): Insight => ({
     { quote: "Test quote", sourceLabel: "Interview" },
     { quote: "Another quote", sourceLabel: "Survey" },
   ],
+  signal_strength,
   created_at: "2026-01-01T00:00:00Z",
 });
 
@@ -50,5 +51,20 @@ describe("ThemesSection", () => {
   it("shows 'View all N quotes' button", () => {
     render(<ThemesSection insights={[makeInsight("i1", "T")]} isStale={false} />);
     expect(screen.getByText(/view all 2 quotes/i)).toBeInTheDocument();
+  });
+
+  it("shows 'Low signal' badge when signal_strength is low", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "App reminders", "low")]} isStale={false} />);
+    expect(screen.getByText("Low signal")).toBeInTheDocument();
+  });
+
+  it("does not show 'Low signal' badge when signal_strength is high", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "Onboarding confusion", "high")]} isStale={false} />);
+    expect(screen.queryByText("Low signal")).not.toBeInTheDocument();
+  });
+
+  it("does not show 'Low signal' badge when signal_strength is null", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "Old theme", null)]} isStale={false} />);
+    expect(screen.queryByText("Low signal")).not.toBeInTheDocument();
   });
 });
