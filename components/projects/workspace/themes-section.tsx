@@ -44,7 +44,12 @@ export function ThemesSection({ insights, isStale }: ThemesSectionProps) {
               <span className="flex-1 text-[14px] font-semibold text-[var(--color-text-primary)]">
                 {insight.theme_name}
               </span>
-              {insight.signal_strength === "low" && (
+              {insight.has_conflict && (
+                <span className="rounded-[var(--radius-pill)] border border-[hsl(0_40%_28%)] bg-[hsl(0_40%_12%)] px-2.5 py-0.5 text-[11px] font-semibold text-[hsl(0_70%_65%)]">
+                  Conflicting signals
+                </span>
+              )}
+              {insight.signal_strength === "low" && !insight.has_conflict && (
                 <span className="rounded-[var(--radius-pill)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-2.5 py-0.5 text-[11px] font-semibold text-[hsl(40_70%_65%)]">
                   Low signal
                 </span>
