@@ -11,7 +11,7 @@ import type { LimitResult } from "@/lib/billing/limits";
 
 interface ProposalsSectionProps {
   proposals: Proposal[];
-  isStale: boolean;
+  isStale?: boolean;
   projectId: string;
   exportLimits: Record<string, LimitResult>;
 }

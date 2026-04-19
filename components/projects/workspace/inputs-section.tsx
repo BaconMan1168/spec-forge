@@ -60,9 +60,10 @@ interface InputsSectionProps {
   lastAnalyzedAt?: string | null;
   canAddFile?: LimitResult;
   onFileCountChange?: (count: number) => void;
+  onNewFilesChange?: (hasNewFiles: boolean) => void;
 }
 
-export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, onFileCountChange }: InputsSectionProps) {
+export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, onFileCountChange, onNewFilesChange }: InputsSectionProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // useOptimistic keeps localFiles in sync with the server `files` prop automatically
@@ -77,6 +78,15 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
   useEffect(() => {
     onFileCountChange?.(localFiles.length);
   }, [localFiles.length, onFileCountChange]);
+
+  // Notify parent when optimistic new-file count changes so stale banners
+  // disappear immediately when the last post-analysis file is deleted.
+  const newFileCount = lastAnalyzedAt
+    ? localFiles.filter((f) => f.created_at > lastAnalyzedAt).length
+    : 0;
+  useEffect(() => {
+    onNewFilesChange?.(newFileCount > 0);
+  }, [newFileCount, onNewFilesChange]);
 
   const included = lastAnalyzedAt
     ? localFiles.filter((f) => f.created_at <= lastAnalyzedAt)
@@ -125,7 +135,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
     >
       <div
         aria-label="Add more inputs"
-        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5"
+        className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 shadow-none"
       >
         {addMoreCardContent}
       </div>
@@ -134,7 +144,7 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
     <Link
       href={`/projects/${projectId}/add`}
       aria-label="Add more inputs"
-      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
+      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] px-4 py-3.5 shadow-none transition-colors hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
     >
       {addMoreCardContent}
     </Link>
@@ -194,29 +204,33 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
           No inputs yet.
         </p>
       ) : (
-        <div
-          className="flex flex-col gap-2 overflow-y-auto py-1 px-2"
-          style={{
-            maxHeight: "260px",
-            maskImage:
-              "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-            scrollbarWidth: "thin",
-          }}
-        >
-          {includedBatches.map((batch) => (
-            <BatchCard
-              key={batch.sourceLabel}
-              batch={batch}
-              onDelete={() => handleDelete(batch.sourceLabel)}
-              isDeleting={isPending}
-              projectId={projectId}
-            />
-          ))}
+        <>
+          {includedBatches.length > 0 && (
+            <div
+              className="flex flex-col gap-2 overflow-y-auto py-2 px-3"
+              style={{
+                maxHeight: "212px",
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+                scrollbarWidth: "thin",
+              }}
+            >
+              {includedBatches.map((batch) => (
+                <BatchCard
+                  key={batch.sourceLabel}
+                  batch={batch}
+                  onDelete={() => handleDelete(batch.sourceLabel)}
+                  isDeleting={isPending}
+                  projectId={projectId}
+                />
+              ))}
+            </div>
+          )}
 
           {newBatches.length > 0 && (
-            <>
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 border-t border-dashed border-[var(--color-border-subtle)] pt-3">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[hsl(40_70%_55%)]">
                   <circle cx="12" cy="12" r="10" />
@@ -237,9 +251,9 @@ export function InputsSection({ files, projectId, lastAnalyzedAt, canAddFile, on
                   />
                 </div>
               ))}
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
       {addMoreLink}
     </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Search, Star } from "lucide-react";
+import { Plus, Search, Star, Info } from "lucide-react";
 import { AnalyzeButton } from "./analyze-button";
 import { InputsSection } from "./inputs-section";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -68,6 +68,16 @@ export function WorkspaceShell({
     setLocalFileCount(files.length);
   }, [files.length]);
 
+  // Optimistic stale state — updated immediately when InputsSection reports that
+  // all post-analysis files have been deleted. Syncs back to server truth on refresh.
+  const [localIsStale, setLocalIsStale] = useState(isStale);
+  useEffect(() => {
+    setLocalIsStale(isStale);
+  }, [isStale]);
+  const handleNewFilesChange = useCallback((hasNewFiles: boolean) => {
+    if (!hasNewFiles) setLocalIsStale(false);
+  }, []);
+
   // Max files = server count + remaining slots. After an optimistic delete the
   // localFileCount drops below maxFiles immediately, re-enabling the button.
   const maxFiles = files.length + (canAddFileResult.remaining ?? 0);
@@ -120,6 +130,7 @@ export function WorkspaceShell({
             lastAnalyzedAt={lastAnalyzedAt}
             canAddFile={canAddFileResult}
             onFileCountChange={setLocalFileCount}
+            onNewFilesChange={handleNewFilesChange}
           />
         </ScrollReveal>
       </div>
@@ -158,6 +169,14 @@ export function WorkspaceShell({
           )}
         </div>
 
+        {localIsStale && !isAnalyzing && (
+          <div className="mb-4 flex items-center gap-2 rounded-[var(--radius-md)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-4 py-2.5">
+            <Info size={13} strokeWidth={1.8} className="shrink-0 text-[hsl(40_70%_55%)]" />
+            <p className="text-[12px] text-[hsl(40_70%_65%)]">
+              New inputs were added after the last analysis. Re-analyze to include them.
+            </p>
+          </div>
+        )}
         {isAnalyzing ? <PulseSkeleton /> : themesContent}
       </div>
 
@@ -195,6 +214,14 @@ export function WorkspaceShell({
           )}
         </div>
 
+        {localIsStale && !isAnalyzing && (
+          <div className="mb-4 flex items-center gap-2 rounded-[var(--radius-md)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-4 py-2.5">
+            <Info size={13} strokeWidth={1.8} className="shrink-0 text-[hsl(40_70%_55%)]" />
+            <p className="text-[12px] text-[hsl(40_70%_65%)]">
+              These proposals are based on a previous analysis. Re-analyze to reflect new inputs.
+            </p>
+          </div>
+        )}
         {isAnalyzing ? <PulseSkeleton /> : proposalsContent}
       </div>
     </>

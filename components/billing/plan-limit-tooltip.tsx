@@ -98,7 +98,7 @@ export function PlanLimitTooltip({ allowed, reason, title, children }: PlanLimit
                 href="/pricing"
                 className="mt-1.5 inline-block text-[11px] font-semibold text-[var(--color-accent-primary)] hover:underline"
               >
-                {upgradeText} →
+                {upgradeText}
               </Link>
             )}
           </motion.div>
