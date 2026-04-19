@@ -25,7 +25,12 @@ Rules:
 - Return AT MOST 5 themes, ranked by frequency and signal strength (strongest first).
 - If signal is weak or no recurring themes exist, return an empty themes array instead of forcing themes.
 
-Return a structured result with themes containing themeName, frequency (human-readable string like "6 of 8 sources"), and representative quotes with source labels.`;
+Signal strength assessment (set signalStrength per theme):
+- "high": theme appears across multiple sources with specific, actionable feedback
+- "medium": theme has some support but limited sources or vague comments
+- "low": theme is based on a single source, very brief/ambiguous comments, or weak evidence
+
+Return a structured result with themes containing themeName, frequency (human-readable string like "6 of 8 sources"), representative quotes with source labels, and signalStrength.`;
 
 function buildUserPrompt(files: FeedbackFile[]): string {
   const sections = files

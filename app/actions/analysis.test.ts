@@ -45,6 +45,7 @@ const mockTheme: Theme = {
   themeName: "Onboarding confusion",
   frequency: "6 of 8 sources",
   quotes: [{ quote: "I was lost", sourceLabel: "Interview" }],
+  signalStrength: "high",
 };
 
 const mockProposal: ProposalOutput = {

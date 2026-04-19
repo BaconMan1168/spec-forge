@@ -42,6 +42,7 @@ export async function persistAnalysisResults({
         theme_name: t.themeName,
         frequency: t.frequency,
         quotes: t.quotes,
+        signal_strength: t.signalStrength,
       }))
     );
   }

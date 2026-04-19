@@ -10,6 +10,7 @@ const validSynthesis = {
         { quote: "The app takes forever to load.", sourceLabel: "User interview A" },
         { quote: "Loading is really slow on mobile.", sourceLabel: "Survey response B" },
       ],
+      signalStrength: "high",
     },
   ],
 };
@@ -31,6 +32,7 @@ describe("SynthesisOutputSchema", () => {
         {
           frequency: "High",
           quotes: [{ quote: "Quote", sourceLabel: "Source" }],
+          signalStrength: "high",
         },
       ],
     };
@@ -40,7 +42,7 @@ describe("SynthesisOutputSchema", () => {
 
   it("rejects theme with empty quotes array", () => {
     const input = {
-      themes: [{ themeName: "Theme", frequency: "High", quotes: [] }],
+      themes: [{ themeName: "Theme", frequency: "High", quotes: [], signalStrength: "high" }],
     };
     const result = SynthesisOutputSchema.safeParse(input);
     expect(result.success).toBe(false);
@@ -53,6 +55,7 @@ describe("SynthesisOutputSchema", () => {
           themeName: "Theme",
           frequency: "High",
           quotes: [{ quote: "Some quote" }],
+          signalStrength: "medium",
         },
       ],
     };

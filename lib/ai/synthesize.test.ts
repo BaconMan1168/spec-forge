@@ -40,6 +40,7 @@ describe("synthesize", () => {
             themeName: "Onboarding confusion",
             frequency: "6 of 8 sources",
             quotes: [{ quote: "I was lost", sourceLabel: "Interview" }],
+            signalStrength: "high",
           },
         ],
       },
@@ -50,6 +51,7 @@ describe("synthesize", () => {
 
     expect(result.themes).toHaveLength(1);
     expect(result.themes[0].themeName).toBe("Onboarding confusion");
+    expect(result.themes[0].signalStrength).toBe("high");
     expect(generateObject).toHaveBeenCalledOnce();
   });
 
@@ -62,6 +64,27 @@ describe("synthesize", () => {
     const result = await synthesize(files);
 
     expect(result.themes).toHaveLength(0);
+  });
+
+  it("preserves low signalStrength from model output", async () => {
+    (generateObject as ReturnType<typeof vi.fn>).mockResolvedValue({
+      object: {
+        themes: [
+          {
+            themeName: "App reminders need improvement",
+            frequency: "1 of 1 sources",
+            quotes: [{ quote: "Maybe make reminders better.", sourceLabel: "Pasted input" }],
+            signalStrength: "low",
+          },
+        ],
+      },
+    });
+
+    const files = [mockFile("f1", "Maybe make reminders better.", "Pasted input")];
+    const result = await synthesize(files);
+
+    expect(result.themes).toHaveLength(1);
+    expect(result.themes[0].signalStrength).toBe("low");
   });
 
   it("includes source labels in the assembled prompt", async () => {
