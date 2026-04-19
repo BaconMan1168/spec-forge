@@ -1,6 +1,9 @@
 const KB = 1024;
 const MB = 1024 * 1024;
 
+/** Maximum words allowed in a single pasted text input (all plans). */
+export const PASTE_WORD_LIMIT = 5000;
+
 /** Per-MIME-type, per-plan file size limits (bytes). */
 export const FILE_SIZE_LIMITS: Record<string, Record<"free" | "pro" | "max", number>> = {
   "text/plain":     { free: 200 * KB, pro: 500 * KB, max: 1 * MB },

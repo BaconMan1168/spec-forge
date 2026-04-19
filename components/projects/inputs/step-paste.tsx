@@ -1,6 +1,14 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const WORD_LIMIT = 5000;
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
 interface StepPasteProps {
   content: string;
   onContentChange: (v: string) => void;
@@ -22,7 +30,9 @@ export function StepPaste({
   onSubmit,
   isSubmitting,
 }: StepPasteProps) {
-  const canSubmit = content.trim().length > 0 && !isSubmitting;
+  const wordCount = countWords(content);
+  const isOverLimit = wordCount > WORD_LIMIT;
+  const canSubmit = content.trim().length > 0 && !isSubmitting && !isOverLimit;
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,6 +48,18 @@ export function StepPaste({
           rows={6}
           className="w-full resize-none rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-3.5 py-2.5 text-[13px] leading-relaxed text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-primary)]/50 focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
         />
+        <p
+          className={`mt-1.5 text-right text-[11px] tabular-nums ${
+            isOverLimit
+              ? "text-[var(--color-error)]"
+              : wordCount > WORD_LIMIT * 0.9
+                ? "text-[hsl(40_70%_55%)]"
+                : "text-[var(--color-text-tertiary)]"
+          }`}
+        >
+          {wordCount.toLocaleString()} / {WORD_LIMIT.toLocaleString()} words
+          {isOverLimit && " — limit exceeded"}
+        </p>
       </div>
 
       <div>

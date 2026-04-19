@@ -49,4 +49,22 @@ describe("StepPaste", () => {
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(baseProps.onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("shows word count counter", () => {
+    render(<StepPaste {...baseProps} content="hello world" />);
+    expect(screen.getByText(/2 \/ 5,000 words/i)).toBeInTheDocument();
+  });
+
+  it("disables submit when content exceeds word limit", () => {
+    const overLimit = Array(5001).fill("word").join(" ");
+    render(<StepPaste {...baseProps} content={overLimit} />);
+    expect(screen.getByRole("button", { name: /submit/i })).toBeDisabled();
+    expect(screen.getByText(/limit exceeded/i)).toBeInTheDocument();
+  });
+
+  it("submit is enabled when content is within word limit", () => {
+    const withinLimit = Array(100).fill("word").join(" ");
+    render(<StepPaste {...baseProps} content={withinLimit} />);
+    expect(screen.getByRole("button", { name: /submit/i })).not.toBeDisabled();
+  });
 });
