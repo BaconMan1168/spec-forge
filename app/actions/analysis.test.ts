@@ -46,6 +46,7 @@ const mockTheme: Theme = {
   frequency: "6 of 8 sources",
   quotes: [{ quote: "I was lost", sourceLabel: "Interview" }],
   signalStrength: "high",
+  hasConflict: false,
 };
 
 const mockProposal: ProposalOutput = {
@@ -56,6 +57,7 @@ const mockProposal: ProposalOutput = {
   suggestedDataModelChanges: [],
   suggestedWorkflowChanges: ["Show checklist on first login"],
   engineeringTasks: ["Build component"],
+  isConflictProposal: false,
 };
 
 beforeEach(() => {

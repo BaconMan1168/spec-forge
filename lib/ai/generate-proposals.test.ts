@@ -21,6 +21,7 @@ const mockTheme: Theme = {
   frequency: "6 of 8 sources",
   quotes: [{ quote: "I was lost", sourceLabel: "Interview" }],
   signalStrength: "high",
+  hasConflict: false,
 };
 
 const mockProposalObject = {
@@ -31,6 +32,7 @@ const mockProposalObject = {
   suggestedDataModelChanges: [],
   suggestedWorkflowChanges: ["Show checklist on first login"],
   engineeringTasks: ["Build OnboardingChecklist component"],
+  isConflictProposal: false,
 };
 
 beforeEach(() => vi.clearAllMocks());
@@ -76,5 +78,30 @@ describe("generateProposals", () => {
     const result = await generateProposals([]);
     expect(result).toHaveLength(0);
     expect(generateObject).not.toHaveBeenCalled();
+  });
+
+  it("injects conflict note into the user prompt when theme hasConflict is true", async () => {
+    (generateObject as ReturnType<typeof vi.fn>).mockResolvedValue({
+      object: { ...mockProposalObject, isConflictProposal: true },
+    });
+
+    const conflictTheme: Theme = { ...mockTheme, hasConflict: true };
+    await generateProposals([conflictTheme]);
+
+    const call = (generateObject as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const userMessage = call.messages.find((m: { role: string }) => m.role === "user");
+    expect(userMessage.content).toContain("CONFLICTING");
+  });
+
+  it("does not inject conflict note when theme hasConflict is false", async () => {
+    (generateObject as ReturnType<typeof vi.fn>).mockResolvedValue({
+      object: mockProposalObject,
+    });
+
+    await generateProposals([mockTheme]);
+
+    const call = (generateObject as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const userMessage = call.messages.find((m: { role: string }) => m.role === "user");
+    expect(userMessage.content).not.toContain("CONFLICTING");
   });
 });

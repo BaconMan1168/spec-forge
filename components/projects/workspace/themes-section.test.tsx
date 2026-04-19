@@ -8,7 +8,12 @@ import { render, screen } from "@testing-library/react";
 import { ThemesSection } from "./themes-section";
 import type { Insight } from "@/lib/types/database";
 
-const makeInsight = (id: string, themeName: string, signal_strength: Insight["signal_strength"] = null): Insight => ({
+const makeInsight = (
+  id: string,
+  themeName: string,
+  signal_strength: Insight["signal_strength"] = null,
+  has_conflict = false,
+): Insight => ({
   id,
   project_id: "p1",
   theme_name: themeName,
@@ -18,6 +23,7 @@ const makeInsight = (id: string, themeName: string, signal_strength: Insight["si
     { quote: "Another quote", sourceLabel: "Survey" },
   ],
   signal_strength,
+  has_conflict,
   created_at: "2026-01-01T00:00:00Z",
 });
 
@@ -66,5 +72,21 @@ describe("ThemesSection", () => {
   it("does not show 'Low signal' badge when signal_strength is null", () => {
     render(<ThemesSection insights={[makeInsight("i1", "Old theme", null)]} isStale={false} />);
     expect(screen.queryByText("Low signal")).not.toBeInTheDocument();
+  });
+
+  it("shows 'Conflicting signals' badge when has_conflict is true", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "UX speed", "medium", true)]} isStale={false} />);
+    expect(screen.getByText("Conflicting signals")).toBeInTheDocument();
+  });
+
+  it("does not show 'Low signal' badge when has_conflict is true (conflict takes precedence)", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "UX speed", "low", true)]} isStale={false} />);
+    expect(screen.getByText("Conflicting signals")).toBeInTheDocument();
+    expect(screen.queryByText("Low signal")).not.toBeInTheDocument();
+  });
+
+  it("does not show 'Conflicting signals' badge when has_conflict is false", () => {
+    render(<ThemesSection insights={[makeInsight("i1", "Normal theme", "high", false)]} isStale={false} />);
+    expect(screen.queryByText("Conflicting signals")).not.toBeInTheDocument();
   });
 });
