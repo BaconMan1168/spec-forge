@@ -14,6 +14,8 @@ export const ProposalOutputSchema = z.object({
   suggestedDataModelChanges: z.array(z.string().min(1)),
   suggestedWorkflowChanges: z.array(z.string().min(1)),
   engineeringTasks: z.array(z.string().min(1)).min(1),
+  // True when the source theme had conflicting signals
+  isConflictProposal: z.boolean(),
 });
 
 export type UserEvidence = z.infer<typeof UserEvidenceSchema>;

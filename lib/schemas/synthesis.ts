@@ -12,6 +12,8 @@ export const ThemeSchema = z.object({
   quotes: z.array(QuoteSchema).min(1),
   // AI self-assessment of evidence quality for this theme
   signalStrength: z.enum(["high", "medium", "low"]),
+  // True when sources express genuinely opposing views on the same dimension
+  hasConflict: z.boolean(),
 });
 
 export const SynthesisOutputSchema = z.object({
