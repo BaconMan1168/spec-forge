@@ -41,6 +41,7 @@ describe("synthesize", () => {
             frequency: "6 of 8 sources",
             quotes: [{ quote: "I was lost", sourceLabel: "Interview" }],
             signalStrength: "high",
+            hasConflict: false,
           },
         ],
       },
@@ -52,6 +53,7 @@ describe("synthesize", () => {
     expect(result.themes).toHaveLength(1);
     expect(result.themes[0].themeName).toBe("Onboarding confusion");
     expect(result.themes[0].signalStrength).toBe("high");
+    expect(result.themes[0].hasConflict).toBe(false);
     expect(generateObject).toHaveBeenCalledOnce();
   });
 
@@ -75,6 +77,7 @@ describe("synthesize", () => {
             frequency: "1 of 1 sources",
             quotes: [{ quote: "Maybe make reminders better.", sourceLabel: "Pasted input" }],
             signalStrength: "low",
+            hasConflict: false,
           },
         ],
       },
@@ -85,6 +88,34 @@ describe("synthesize", () => {
 
     expect(result.themes).toHaveLength(1);
     expect(result.themes[0].signalStrength).toBe("low");
+  });
+
+  it("preserves hasConflict true from model output", async () => {
+    (generateObject as ReturnType<typeof vi.fn>).mockResolvedValue({
+      object: {
+        themes: [
+          {
+            themeName: "UX speed",
+            frequency: "2 of 2 sources",
+            quotes: [
+              { quote: "Too slow", sourceLabel: "Source A" },
+              { quote: "Too fast", sourceLabel: "Source B" },
+            ],
+            signalStrength: "medium",
+            hasConflict: true,
+          },
+        ],
+      },
+    });
+
+    const files = [
+      mockFile("f1", "The app is too slow", "Source A"),
+      mockFile("f2", "The app is too fast", "Source B"),
+    ];
+    const result = await synthesize(files);
+
+    expect(result.themes).toHaveLength(1);
+    expect(result.themes[0].hasConflict).toBe(true);
   });
 
   it("includes source labels in the assembled prompt", async () => {

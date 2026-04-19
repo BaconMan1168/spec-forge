@@ -11,6 +11,7 @@ const validSynthesis = {
         { quote: "Loading is really slow on mobile.", sourceLabel: "Survey response B" },
       ],
       signalStrength: "high",
+      hasConflict: false,
     },
   ],
 };
@@ -33,6 +34,7 @@ describe("SynthesisOutputSchema", () => {
           frequency: "High",
           quotes: [{ quote: "Quote", sourceLabel: "Source" }],
           signalStrength: "high",
+          hasConflict: false,
         },
       ],
     };
@@ -42,7 +44,7 @@ describe("SynthesisOutputSchema", () => {
 
   it("rejects theme with empty quotes array", () => {
     const input = {
-      themes: [{ themeName: "Theme", frequency: "High", quotes: [], signalStrength: "high" }],
+      themes: [{ themeName: "Theme", frequency: "High", quotes: [], signalStrength: "high", hasConflict: false }],
     };
     const result = SynthesisOutputSchema.safeParse(input);
     expect(result.success).toBe(false);
@@ -56,11 +58,31 @@ describe("SynthesisOutputSchema", () => {
           frequency: "High",
           quotes: [{ quote: "Some quote" }],
           signalStrength: "medium",
+          hasConflict: false,
         },
       ],
     };
     const result = SynthesisOutputSchema.safeParse(input);
     expect(result.success).toBe(false);
+  });
+
+  it("accepts theme with hasConflict true", () => {
+    const input = {
+      themes: [
+        {
+          themeName: "UX speed",
+          frequency: "2 of 2 sources",
+          quotes: [
+            { quote: "Too slow", sourceLabel: "Source A" },
+            { quote: "Too fast", sourceLabel: "Source B" },
+          ],
+          signalStrength: "medium",
+          hasConflict: true,
+        },
+      ],
+    };
+    const result = SynthesisOutputSchema.safeParse(input);
+    expect(result.success).toBe(true);
   });
 
   it("strips extra fields", () => {

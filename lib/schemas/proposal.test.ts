@@ -26,6 +26,7 @@ const validProposal = {
     "Add React Suspense boundaries around data-dependent sections",
     "Migrate list endpoint to cursor-based pagination",
   ],
+  isConflictProposal: false,
 };
 
 describe("ProposalOutputSchema", () => {

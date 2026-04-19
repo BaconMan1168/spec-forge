@@ -25,6 +25,7 @@ const makeProposal = (id: string, featureName: string, overrides: Partial<Propos
   data_model_changes: [],
   workflow_changes: ["Update flow"],
   engineering_tasks: ["Build it"],
+  is_conflict_proposal: false,
   created_at: "2026-01-01T00:00:00Z",
   ...overrides,
 });
@@ -119,5 +120,31 @@ describe("ProposalsSection", () => {
     );
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
+  });
+
+  it("shows conflict disclaimer when is_conflict_proposal is true and card is expanded", () => {
+    render(
+      <ProposalsSection
+        proposals={[makeProposal("p1", "UX Speed", { is_conflict_proposal: true })]}
+        isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
+      />
+    );
+    fireEvent.click(screen.getByText("UX Speed"));
+    expect(screen.getByText(/opposing views/i)).toBeInTheDocument();
+  });
+
+  it("does not show conflict disclaimer for a normal proposal", () => {
+    render(
+      <ProposalsSection
+        proposals={[makeProposal("p1", "Feature A", { is_conflict_proposal: false })]}
+        isStale={false}
+        projectId="proj-1"
+        exportLimits={makeExportLimits("p1")}
+      />
+    );
+    fireEvent.click(screen.getByText("Feature A"));
+    expect(screen.queryByText(/opposing views/i)).not.toBeInTheDocument();
   });
 });

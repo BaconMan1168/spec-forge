@@ -30,7 +30,12 @@ Signal strength assessment (set signalStrength per theme):
 - "medium": theme has some support but limited sources or vague comments
 - "low": theme is based on a single source, very brief/ambiguous comments, or weak evidence
 
-Return a structured result with themes containing themeName, frequency (human-readable string like "6 of 8 sources"), representative quotes with source labels, and signalStrength.`;
+Conflict detection (set hasConflict per theme):
+- Set hasConflict to true when sources express genuinely opposing views on the same dimension (e.g. one source says the UX is too slow, another says it is too fast; one source says the app is too simple, another says it is too complex).
+- Do not flag as conflict when sources merely vary in intensity or emphasis on the same problem.
+- Set hasConflict to false for all other themes.
+
+Return a structured result with themes containing themeName, frequency (human-readable string like "6 of 8 sources"), representative quotes with source labels, signalStrength, and hasConflict.`;
 
 function buildUserPrompt(files: FeedbackFile[]): string {
   const sections = files

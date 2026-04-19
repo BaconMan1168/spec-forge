@@ -15,18 +15,27 @@ Rules:
 - Break engineering work into atomic, implementation-ready steps suitable for AI coding agents.
 - If the evidence is too weak, still produce the best proposal you can from the available quotes.
 
-Return the proposal with all required fields: featureName, problemStatement, userEvidence, suggestedUiChanges, suggestedDataModelChanges, suggestedWorkflowChanges, engineeringTasks.`;
+Conflict handling:
+- When the theme is marked as conflicting, do NOT pick a side.
+- Name the disagreement explicitly in the problem statement.
+- Recommend user research as the primary path to resolve the conflict before building.
+- Set isConflictProposal to true for conflicting themes, false otherwise.
+
+Return the proposal with all required fields: featureName, problemStatement, userEvidence, suggestedUiChanges, suggestedDataModelChanges, suggestedWorkflowChanges, engineeringTasks, isConflictProposal.`;
 
 function buildProposalPrompt(theme: Theme): string {
   const quotesText = theme.quotes
     .map((q) => `- "${q.quote}" — ${q.sourceLabel}`)
     .join("\n");
 
+  const conflictNote = theme.hasConflict
+    ? "\nNote: This theme has CONFLICTING signals — sources express opposing views. Do not pick a side. Acknowledge the disagreement and recommend research to resolve it.\n"
+    : "";
+
   return `Generate a structured feature proposal for the following theme:
 
 Theme: ${theme.themeName}
-Frequency: ${theme.frequency}
-
+Frequency: ${theme.frequency}${conflictNote}
 Supporting evidence:
 ${quotesText}`;
 }
