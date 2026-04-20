@@ -104,6 +104,27 @@ async function countAnalyzedProjectsThisPeriod(
  *   period, re-running is allowed without consuming an additional slot.
  * - Otherwise, checks if the user has remaining analysis slots for the period.
  */
+/**
+ * Returns the number of project slots used and the plan limit for display in
+ * the settings page. Uses the same accounting as canAnalyzeProject so the
+ * number stays accurate even after projects with completed analyses are deleted.
+ */
+export async function getMonthlyProjectUsage(
+  userId: string
+): Promise<{ used: number; limit: number | null }> {
+  const plan = await getUserPlan(userId);
+  if (plan === "max") {
+    const periodStart = await getBillingPeriodStart(userId);
+    const used = await countAnalyzedProjectsThisPeriod(userId, periodStart);
+    return { used, limit: null };
+  }
+
+  const periodStart = await getBillingPeriodStart(userId);
+  const used = await countAnalyzedProjectsThisPeriod(userId, periodStart);
+  const limit = plan === "pro" ? PRO_LIMITS.projectsPerMonth : FREE_LIMITS.projectsPerMonth;
+  return { used, limit };
+}
+
 export async function canAnalyzeProject(
   userId: string,
   projectId: string
