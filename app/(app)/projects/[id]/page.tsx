@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { notFound } from "next/navigation";
 import { LockedSection } from "@/components/projects/workspace/locked-section";
+import { LowSignalCard } from "@/components/projects/workspace/low-signal-card";
 import { WorkspaceShell } from "@/components/projects/workspace/workspace-shell";
 import { ThemesSection } from "@/components/projects/workspace/themes-section";
 import { ProposalsSection } from "@/components/projects/workspace/proposals-section";
@@ -64,6 +65,8 @@ export default async function ProjectPage({
     ? feedbackFiles.some((f) => f.created_at > lastAnalyzedAt)
     : false;
   const hasResults = cappedInsights.length > 0 || cappedProposals.length > 0;
+  // True when analysis has been run but returned no themes (low-signal input).
+  const hasLowSignal = lastRun !== null && cappedInsights.length === 0;
 
   return (
     <div className="mx-auto max-w-[820px]">
@@ -130,6 +133,8 @@ export default async function ProjectPage({
         themesContent={
           cappedInsights.length > 0 ? (
             <ThemesSection insights={cappedInsights} />
+          ) : hasLowSignal ? (
+            <LowSignalCard message="Add more data to synthesize themes." />
           ) : (
             <LockedSection
               title="Themes unlock after analysis"
@@ -140,6 +145,8 @@ export default async function ProjectPage({
         proposalsContent={
           cappedProposals.length > 0 ? (
             <ProposalsSection proposals={cappedProposals} projectId={id} exportLimits={exportLimits} />
+          ) : hasLowSignal ? (
+            <LowSignalCard message="Add more data to generate proposals." />
           ) : (
             <LockedSection
               title="Proposals unlock after analysis"
