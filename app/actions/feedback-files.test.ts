@@ -61,6 +61,7 @@ import {
   getFeedbackFiles,
   deleteFeedbackBatch,
 } from "./feedback-files";
+import { countWords } from "@/lib/parse/parse-file";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -122,6 +123,13 @@ describe("pasteFeedbackText", () => {
     await expect(
       pasteFeedbackText({ projectId: "p1", sourceType: "  ", content: "hi" })
     ).rejects.toThrow("Source label is required");
+  });
+
+  it("throws when word count exceeds 5000-word limit", async () => {
+    (countWords as ReturnType<typeof vi.fn>).mockReturnValueOnce(5001);
+    await expect(
+      pasteFeedbackText({ projectId: "p1", sourceType: "Interview", content: "text" })
+    ).rejects.toThrow("5,000-word limit");
   });
 });
 

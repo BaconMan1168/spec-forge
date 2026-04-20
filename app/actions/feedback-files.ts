@@ -7,7 +7,7 @@ import {
   countWords,
 } from "@/lib/parse/parse-file";
 import { canAddFile as checkCanAddFile, getUserPlan } from "@/lib/billing/limits";
-import { FILE_SIZE_LIMITS, FILE_TYPE_LABEL, formatBytes } from "@/lib/billing/config";
+import { FILE_SIZE_LIMITS, FILE_TYPE_LABEL, formatBytes, PASTE_WORD_LIMIT } from "@/lib/billing/config";
 import type { FeedbackFile } from "@/lib/types/database";
 
 function sanitizeSourceLabel(raw: string): string {
@@ -160,6 +160,13 @@ export async function pasteFeedbackText(data: {
   const content = data.content.trim();
   if (!sourceType) throw new Error("Source label is required");
   if (!content) throw new Error("Content is required");
+
+  const wordCount = countWords(content);
+  if (wordCount > PASTE_WORD_LIMIT) {
+    throw new Error(
+      `Pasted text exceeds the ${PASTE_WORD_LIMIT.toLocaleString()}-word limit (${wordCount.toLocaleString()} words). Please shorten the text or split it into multiple inputs.`
+    );
+  }
 
   const { data: record, error } = await supabase
     .from("feedback_files")
