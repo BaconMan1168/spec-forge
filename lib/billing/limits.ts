@@ -54,25 +54,45 @@ async function getBillingPeriodStart(userId: string): Promise<string> {
 
 /**
  * Counts the number of distinct projects the user has run analysis on in the
- * current billing period. Deleted projects are still counted because the
- * analysis_runs record persists after project deletion.
+ * current billing period.
+ *
+ * Deleted projects are still counted: when a project is deleted, its
+ * analysis_runs rows have project_id set to NULL (SET NULL constraint) but the
+ * rows themselves remain. Each NULL row represents one previously-analyzed
+ * project slot that must continue to count toward the monthly limit, preventing
+ * users from bypassing the limit by deleting and recreating projects.
+ *
+ * Counting:
+ * - Non-null project_ids: deduplicated (re-runs on the same live project use 1 slot)
+ * - Null project_ids (deleted projects): each distinct row = 1 slot
+ *   (free users can only run once per project so there is at most 1 null row
+ *   per deleted project; the slight over-count for paid re-runs is acceptable)
  */
 async function countAnalyzedProjectsThisPeriod(
   userId: string,
   periodStart: string
 ): Promise<number> {
   const supabase = await createClient();
-  // Count distinct project_ids — each project only uses one "slot" regardless
-  // of how many times analysis was re-run on it.
   const { data } = await supabase
     .from("analysis_runs")
-    .select("project_id")
+    .select("id, project_id")
     .eq("user_id", userId)
     .gte("created_at", periodStart);
 
   if (!data) return 0;
-  const unique = new Set(data.map((r) => r.project_id));
-  return unique.size;
+
+  const liveProjectIds = new Set<string>();
+  let deletedCount = 0;
+
+  for (const row of data) {
+    if (row.project_id === null) {
+      deletedCount++;
+    } else {
+      liveProjectIds.add(row.project_id as string);
+    }
+  }
+
+  return liveProjectIds.size + deletedCount;
 }
 
 /**
