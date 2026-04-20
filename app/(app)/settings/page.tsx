@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { SubscriptionActions } from "@/components/billing/subscription-actions";
+import { getMonthlyProjectUsage } from "@/lib/billing/limits";
 
 const PLAN_LABELS: Record<"free" | "pro" | "max", string> = {
   free: "Free",
@@ -15,11 +16,6 @@ const PLAN_DESCRIPTIONS: Record<"free" | "pro" | "max", string> = {
   max: "Unlimited projects · 20 files/project · Priority AI",
 };
 
-const PROJECT_LIMITS: Record<"free" | "pro" | "max", number | null> = {
-  free: 2,
-  pro: 20,
-  max: null,
-};
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -27,11 +23,7 @@ export default async function SettingsPage() {
 
   if (!user) redirect("/login");
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const [{ data: profile }, { count: projectCount }] = await Promise.all([
+  const [{ data: profile }, projectUsage] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -39,11 +31,7 @@ export default async function SettingsPage() {
       )
       .eq("id", user.id)
       .single(),
-    supabase
-      .from("projects")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", startOfMonth.toISOString()),
+    getMonthlyProjectUsage(user.id),
   ]);
 
   const plan: "free" | "pro" | "max" =
@@ -53,8 +41,8 @@ export default async function SettingsPage() {
         ? "max"
         : "pro";
 
-  const projectsThisMonth = projectCount ?? 0;
-  const limit = PROJECT_LIMITS[plan];
+  const projectsThisMonth = projectUsage.used;
+  const limit = projectUsage.limit;
   const cancelAt: string | null = profile?.subscription_cancel_at ?? null;
   const pendingDowngradePlan: "pro" | null =
     profile?.subscription_pending_plan === "pro" ? "pro" : null;
