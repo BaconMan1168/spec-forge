@@ -44,14 +44,18 @@ export function AnalyzeButton({
       const body = await res.json();
       if (!res.ok) {
         setError(body?.error?.message ?? "Analysis failed. Please try again.");
+        onAnalyzingChange?.(false);
         return;
       }
+      // Keep isAnalyzing=true until WorkspaceShell detects that router.refresh()
+      // has delivered fresh server props — clears via lastAnalyzedAt change.
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
       onAnalyzingChange?.(false);
+    } finally {
+      // Only clear button spinner; skeleton stays until fresh data arrives.
+      setLoading(false);
     }
   }
 
