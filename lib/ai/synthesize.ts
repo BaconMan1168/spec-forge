@@ -23,7 +23,13 @@ Rules:
 - Group semantically similar feedback into recurring themes.
 - Prefer meaningful recurring pain points over one-off comments.
 - Return AT MOST 5 themes, ranked by frequency and signal strength (strongest first).
-- If signal is weak or no recurring themes exist, return an empty themes array instead of forcing themes.
+
+STRICT low-signal rule — return an empty themes array (no themes at all) if ANY of the following apply:
+- The input contains fewer than 2 distinct sources.
+- No theme appears in 2 or more distinct sources (single-source mentions are noise, not themes).
+- The feedback is too vague, too short, or too generic to identify actionable product patterns (e.g. single words, filler text, lorem ipsum, test data, non-product content).
+- The content does not constitute real product feedback (e.g. it is a random document, marketing copy, or unrelated text).
+When in doubt, return empty. Do not invent or stretch themes to fill the output.
 
 Signal strength assessment (set signalStrength per theme):
 - "high": theme appears across multiple sources with specific, actionable feedback
