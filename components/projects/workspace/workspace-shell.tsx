@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Plus, Search, Star, Info } from "lucide-react";
 import { AnalyzeButton } from "./analyze-button";
@@ -61,6 +61,25 @@ export function WorkspaceShell({
   proposalsContent,
 }: WorkspaceShellProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Clears the analyzing skeleton once router.refresh() delivers new server props.
+  // lastAnalyzedAt is a new timestamp on every analysis run (including low-signal),
+  // so any change reliably means the server has re-rendered with fresh data.
+  const lastAnalyzedAtRef = useRef(lastAnalyzedAt);
+  useEffect(() => {
+    if (isAnalyzing && lastAnalyzedAt !== lastAnalyzedAtRef.current) {
+      lastAnalyzedAtRef.current = lastAnalyzedAt;
+      setIsAnalyzing(false);
+    }
+  }, [lastAnalyzedAt, isAnalyzing]);
+
+  // Safety: clear analyzing if the refresh takes unexpectedly long (30s).
+  useEffect(() => {
+    if (!isAnalyzing) return;
+    const timer = setTimeout(() => setIsAnalyzing(false), 30_000);
+    return () => clearTimeout(timer);
+  }, [isAnalyzing]);
+
   // Optimistic file count — updated immediately when InputsSection deletes a file.
   // Syncs back to server truth when files prop updates after router.refresh().
   const [localFileCount, setLocalFileCount] = useState(files.length);
