@@ -28,6 +28,7 @@ const baseProps = {
   id: "abc-123",
   name: "Q2 Discovery Sprint",
   createdAt: "2026-03-24T00:00:00.000Z",
+  expiresAt: null,
   index: 0,
 };
 
@@ -58,5 +59,28 @@ describe("ProjectTile", () => {
     const { container } = render(<ProjectTile {...baseProps} />);
     const card = container.querySelector("[class*='duration-']");
     expect(card?.className).toMatch(/duration-\[500ms\]/);
+  });
+
+  it("shows no expiry warning when expiresAt is null", () => {
+    render(<ProjectTile {...baseProps} expiresAt={null} />);
+    expect(screen.queryByText(/expires/i)).not.toBeInTheDocument();
+  });
+
+  it("shows no expiry warning when expiresAt is >3 days away", () => {
+    const far = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    render(<ProjectTile {...baseProps} expiresAt={far} />);
+    expect(screen.queryByText(/expires/i)).not.toBeInTheDocument();
+  });
+
+  it("shows expiry warning when expiresAt is ≤3 days away", () => {
+    const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    render(<ProjectTile {...baseProps} expiresAt={soon} />);
+    expect(screen.getByText(/expires in/i)).toBeInTheDocument();
+  });
+
+  it("shows 'Expires today' when expiresAt is within 24 hours", () => {
+    const today = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    render(<ProjectTile {...baseProps} expiresAt={today} />);
+    expect(screen.getByText(/expires today/i)).toBeInTheDocument();
   });
 });

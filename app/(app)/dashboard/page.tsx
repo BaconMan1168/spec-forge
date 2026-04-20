@@ -76,6 +76,7 @@ export default async function DashboardPage({
               id={project.id}
               name={project.name}
               createdAt={project.created_at}
+              expiresAt={project.expires_at ?? null}
               index={index + 2}
             />
           ))}
