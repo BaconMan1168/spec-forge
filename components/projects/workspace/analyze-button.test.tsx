@@ -3,11 +3,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AnalyzeButton } from "./analyze-button";
 
-const mockRefresh = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({ refresh: mockRefresh })),
-}));
-
 beforeEach(() => {
   vi.clearAllMocks();
   global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ signal: "ok" }) });
@@ -29,8 +24,9 @@ describe("AnalyzeButton", () => {
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("calls /api/projects/[id]/analyze on click and refreshes on success", async () => {
-    render(<AnalyzeButton projectId="p1" hasInputs isStale={false} />);
+  it("calls /api/projects/[id]/analyze on click and invokes onRefresh on success", async () => {
+    const onRefresh = vi.fn();
+    render(<AnalyzeButton projectId="p1" hasInputs isStale={false} onRefresh={onRefresh} />);
     fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
 
     await waitFor(() => {
@@ -38,7 +34,7 @@ describe("AnalyzeButton", () => {
         "/api/projects/p1/analyze",
         expect.objectContaining({ method: "POST" })
       );
-      expect(mockRefresh).toHaveBeenCalled();
+      expect(onRefresh).toHaveBeenCalled();
     });
   });
 

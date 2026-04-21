@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanLimitTooltip } from "@/components/billing/plan-limit-tooltip";
@@ -14,6 +13,8 @@ interface AnalyzeButtonProps {
   hasResults?: boolean;
   canRerun?: LimitResult;
   onAnalyzingChange?: (isAnalyzing: boolean) => void;
+  /** Called on success so WorkspaceShell can trigger router.refresh() inside a transition. */
+  onRefresh?: () => void;
 }
 
 export function AnalyzeButton({
@@ -23,8 +24,8 @@ export function AnalyzeButton({
   hasResults = false,
   canRerun = { allowed: true, reason: "" },
   onAnalyzingChange,
+  onRefresh,
 }: AnalyzeButtonProps) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,9 +48,10 @@ export function AnalyzeButton({
         onAnalyzingChange?.(false);
         return;
       }
-      // Keep isAnalyzing=true until WorkspaceShell detects that router.refresh()
-      // has delivered fresh server props — clears via lastAnalyzedAt change.
-      router.refresh();
+      // Delegate the refresh to WorkspaceShell, which wraps it in startTransition.
+      // isPendingRefresh stays true until the new RSC payload is ready to paint —
+      // eliminating the stale-content flash without any timing hacks.
+      onRefresh?.();
     } catch {
       setError("Something went wrong. Please try again.");
       onAnalyzingChange?.(false);
