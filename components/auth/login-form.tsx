@@ -8,7 +8,26 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot";
+
+function EnvelopeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6 text-[var(--color-accent-primary)]"
+      aria-hidden="true"
+    >
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <polyline points="22,6 12,13 2,6" />
+    </svg>
+  );
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -23,14 +42,30 @@ export function LoginForm() {
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signedUp, setSignedUp] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
-  function toggleMode() {
-    setMode((m) => (m === "signin" ? "signup" : "signin"));
+  function clearErrors() {
     setError(null);
     setEmailError(null);
     setPasswordError(null);
     setConfirmPasswordError(null);
+  }
+
+  function toggleMode() {
+    setMode((m) => (m === "signin" ? "signup" : "signin"));
+    clearErrors();
     setConfirmPassword("");
+  }
+
+  function goToForgot() {
+    setMode("forgot");
+    clearErrors();
+  }
+
+  function goToSignIn() {
+    setMode("signin");
+    clearErrors();
+    setForgotSent(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,8 +75,10 @@ export function LoginForm() {
     let valid = true;
     if (!email.trim()) { setEmailError("Email is required"); valid = false; }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("Enter a valid email address"); valid = false; }
-    if (!password) { setPasswordError("Password is required"); valid = false; }
-    if (mode === "signup" && !confirmPassword) { setConfirmPasswordError("Please confirm your password"); valid = false; }
+    if (mode !== "forgot") {
+      if (!password) { setPasswordError("Password is required"); valid = false; }
+      if (mode === "signup" && !confirmPassword) { setConfirmPasswordError("Please confirm your password"); valid = false; }
+    }
     if (!valid) return;
 
     if (mode === "signup" && password !== confirmPassword) {
@@ -51,6 +88,19 @@ export function LoginForm() {
 
     setLoading(true);
     const supabase = createClient();
+
+    if (mode === "forgot") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      setLoading(false);
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setForgotSent(true);
+      return;
+    }
 
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({ email, password });
@@ -90,20 +140,7 @@ export function LoginForm() {
     return (
       <div className="flex flex-col items-center gap-4 py-4 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-accent-muted)]">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6 text-[var(--color-accent-primary)]"
-            aria-hidden="true"
-          >
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
+          <EnvelopeIcon />
         </div>
         <p className="text-[var(--color-text-primary)] font-medium">Check your inbox</p>
         <p className="text-sm text-[var(--color-text-secondary)]">
@@ -113,11 +150,36 @@ export function LoginForm() {
     );
   }
 
+  if (forgotSent) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-4 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-accent-muted)]">
+          <EnvelopeIcon />
+        </div>
+        <p className="text-[var(--color-text-primary)] font-medium">Check your inbox</p>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          We sent a password reset link to <span className="text-[var(--color-text-primary)]">{email}</span>.
+        </p>
+        <button
+          type="button"
+          onClick={goToSignIn}
+          className="mt-2 text-sm text-[var(--color-text-secondary)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+        >
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1">
       {/* Mode-aware subtitle */}
       <p className="mb-6 text-center text-sm text-[var(--color-text-secondary)]">
-        {mode === "signin" ? "Sign in to your account" : "Create your account"}
+        {mode === "signin"
+          ? "Sign in to your account"
+          : mode === "signup"
+            ? "Create your account"
+            : "Reset your password"}
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
@@ -131,34 +193,55 @@ export function LoginForm() {
           />
           {emailError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{emailError}</p>}
         </div>
-        <div>
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
-            placeholder="••••••••"
-          />
-          {passwordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{passwordError}</p>}
-        </div>
 
         <AnimatePresence initial={false}>
-          {mode === "signup" && (
+          {mode !== "forgot" && (
             <motion.div
-              key="confirm-password"
+              key="password-fields"
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
+              className="flex flex-col gap-6"
             >
-              <Input
-                label="Confirm password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(null); }}
-                placeholder="••••••••"
-              />
-              {confirmPasswordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{confirmPasswordError}</p>}
+              <div>
+                <Input
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
+                  placeholder="••••••••"
+                />
+                {passwordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{passwordError}</p>}
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={goToForgot}
+                    className="mt-1.5 text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+
+              {mode === "signup" && (
+                <motion.div
+                  key="confirm-password"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  <Input
+                    label="Confirm password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(null); }}
+                    placeholder="••••••••"
+                  />
+                  {confirmPasswordError && <p role="alert" className="mt-1 text-sm text-[var(--color-error)]">{confirmPasswordError}</p>}
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -171,14 +254,30 @@ export function LoginForm() {
 
         <Button type="submit" disabled={loading}>
           {loading
-            ? mode === "signin"
-              ? "Signing in…"
-              : "Creating account…"
-            : mode === "signin"
-              ? "Sign in"
-              : "Sign up"}
+            ? mode === "forgot"
+              ? "Sending…"
+              : mode === "signin"
+                ? "Signing in…"
+                : "Creating account…"
+            : mode === "forgot"
+              ? "Send reset link"
+              : mode === "signin"
+                ? "Sign in"
+                : "Sign up"}
         </Button>
 
+        {mode === "forgot" && (
+          <button
+            type="button"
+            onClick={goToSignIn}
+            className="text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+          >
+            Back to sign in
+          </button>
+        )}
+
+        {mode !== "forgot" && (
+          <>
         <div className="relative flex items-center gap-4">
           <div className="flex-1 border-t border-[var(--color-border-subtle)]" />
           <span className="text-xs text-[var(--color-text-tertiary)]">or</span>
@@ -201,34 +300,38 @@ export function LoginForm() {
           </svg>
           Continue with Google
         </Button>
+          </>
+        )}
       </form>
 
       {/* Mode toggle */}
-      <p className="mt-4 text-center text-sm text-[var(--color-text-tertiary)]">
-        {mode === "signin" ? (
-          <>
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-[var(--color-text-secondary)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
-            >
-              Create an account
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{" "}
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-[var(--color-text-secondary)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
-            >
-              Sign in
-            </button>
-          </>
-        )}
-      </p>
+      {mode !== "forgot" && (
+        <p className="mt-4 text-center text-sm text-[var(--color-text-tertiary)]">
+          {mode === "signin" ? (
+            <>
+              Don&apos;t have an account?{" "}
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-[var(--color-text-secondary)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+              >
+                Create an account
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-[var(--color-text-secondary)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+              >
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }
