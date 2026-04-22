@@ -39,7 +39,12 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      const msg = error.message;
+      setError(
+        (error as { status?: number }).status === 429
+          ? "Too many requests. Please wait a moment before trying again."
+          : msg.charAt(0).toUpperCase() + msg.slice(1)
+      );
       return;
     }
 
