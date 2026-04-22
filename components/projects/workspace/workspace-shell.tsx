@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search, Star, Info } from "lucide-react";
 import { AnalyzeButton } from "./analyze-button";
@@ -60,25 +61,24 @@ export function WorkspaceShell({
   themesContent,
   proposalsContent,
 }: WorkspaceShellProps) {
+  const router = useRouter();
+  // isPendingRefresh stays true for the entire RSC re-fetch after analysis, going
+  // false only once React has the new payload ready to paint — no gap, no flash.
+  const [isPendingRefresh, startRefreshTransition] = useTransition();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Clears the analyzing skeleton once router.refresh() delivers new server props.
-  // lastAnalyzedAt is a new timestamp on every analysis run (including low-signal),
-  // so any change reliably means the server has re-rendered with fresh data.
-  const lastAnalyzedAtRef = useRef(lastAnalyzedAt);
-  useEffect(() => {
-    if (isAnalyzing && lastAnalyzedAt !== lastAnalyzedAtRef.current) {
-      lastAnalyzedAtRef.current = lastAnalyzedAt;
-      setIsAnalyzing(false);
-    }
-  }, [lastAnalyzedAt, isAnalyzing]);
+  // showSkeleton covers both phases:
+  //   isAnalyzing      — API call in flight (before router.refresh)
+  //   isPendingRefresh — RSC re-fetch in flight (after router.refresh)
+  const showSkeleton = isAnalyzing || isPendingRefresh;
 
-  // Safety: clear analyzing if the refresh takes unexpectedly long (30s).
-  useEffect(() => {
-    if (!isAnalyzing) return;
-    const timer = setTimeout(() => setIsAnalyzing(false), 30_000);
-    return () => clearTimeout(timer);
-  }, [isAnalyzing]);
+  // Passed to AnalyzeButton so it can trigger the refresh without owning the router.
+  const handleRefresh = useCallback(() => {
+    setIsAnalyzing(false);
+    startRefreshTransition(() => {
+      router.refresh();
+    });
+  }, [router]);
 
   // Optimistic file count — updated immediately when InputsSection deletes a file.
   // Syncs back to server truth when files prop updates after router.refresh().
@@ -135,6 +135,7 @@ export function WorkspaceShell({
           hasResults={hasResults}
           canRerun={canRerun}
           onAnalyzingChange={setIsAnalyzing}
+          onRefresh={handleRefresh}
         />
       </div>
 
@@ -188,7 +189,7 @@ export function WorkspaceShell({
           )}
         </div>
 
-        {localIsStale && !isAnalyzing && (
+        {localIsStale && !showSkeleton && (
           <div className="mb-4 flex items-center gap-2 rounded-[var(--radius-md)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-4 py-2.5">
             <Info size={13} strokeWidth={1.8} className="shrink-0 text-[hsl(40_70%_55%)]" />
             <p className="text-[12px] text-[hsl(40_70%_65%)]">
@@ -196,7 +197,7 @@ export function WorkspaceShell({
             </p>
           </div>
         )}
-        {isAnalyzing ? <PulseSkeleton /> : themesContent}
+        {showSkeleton ? <PulseSkeleton /> : themesContent}
       </div>
 
       <div className="h-px bg-[var(--color-border-subtle)]" />
@@ -233,7 +234,7 @@ export function WorkspaceShell({
           )}
         </div>
 
-        {localIsStale && !isAnalyzing && (
+        {localIsStale && !showSkeleton && (
           <div className="mb-4 flex items-center gap-2 rounded-[var(--radius-md)] border border-[hsl(40_40%_28%)] bg-[hsl(40_40%_12%)] px-4 py-2.5">
             <Info size={13} strokeWidth={1.8} className="shrink-0 text-[hsl(40_70%_55%)]" />
             <p className="text-[12px] text-[hsl(40_70%_65%)]">
@@ -241,7 +242,7 @@ export function WorkspaceShell({
             </p>
           </div>
         )}
-        {isAnalyzing ? <PulseSkeleton /> : proposalsContent}
+        {showSkeleton ? <PulseSkeleton /> : proposalsContent}
       </div>
     </>
   );
