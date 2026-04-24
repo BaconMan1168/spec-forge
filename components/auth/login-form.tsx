@@ -10,6 +10,14 @@ import { Input } from "@/components/ui/input";
 
 type Mode = "signin" | "signup" | "forgot";
 
+function formatAuthError(error: { message: string; status?: number }): string {
+  if (error.status === 429) {
+    return "Too many requests. Please wait a moment before trying again.";
+  }
+  const msg = error.message;
+  return msg.charAt(0).toUpperCase() + msg.slice(1);
+}
+
 function EnvelopeIcon() {
   return (
     <svg
@@ -95,7 +103,7 @@ export function LoginForm() {
       });
       setLoading(false);
       if (error) {
-        setError(error.message);
+        setError(formatAuthError(error));
         return;
       }
       setForgotSent(true);
@@ -105,7 +113,7 @@ export function LoginForm() {
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        setError(error.message);
+        setError(formatAuthError(error));
         setLoading(false);
         return;
       }
@@ -116,7 +124,7 @@ export function LoginForm() {
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      setError(formatAuthError(error));
       setLoading(false);
       return;
     }
