@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { XernLogo } from "@/components/nav/spec-forge-logo";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
@@ -102,7 +103,8 @@ export default function ResetPasswordPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-2)] p-8"
       >
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <XernLogo />
           <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">
             Xern AI
           </h1>

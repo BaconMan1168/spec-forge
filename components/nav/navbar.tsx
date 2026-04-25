@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SpecForgeLogo } from "./spec-forge-logo";
+import { XernLogo } from "./spec-forge-logo";
 import { NavBreadcrumb } from "./nav-breadcrumb";
 import { AvatarDropdown } from "./avatar-dropdown";
 
@@ -20,7 +20,7 @@ export function Navbar({ userEmail }: NavbarProps) {
             href="/"
             className="flex flex-shrink-0 items-center gap-2"
           >
-            <SpecForgeLogo />
+            <XernLogo />
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]">
               Xern
             </span>

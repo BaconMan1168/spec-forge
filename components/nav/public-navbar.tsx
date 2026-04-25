@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { SpecForgeLogo } from "@/components/nav/spec-forge-logo";
+import { XernLogo } from "@/components/nav/spec-forge-logo";
 import { AvatarDropdown } from "@/components/nav/avatar-dropdown";
 
 const NAV_LINKS = [
@@ -71,7 +71,7 @@ export function PublicNavbar({ userEmail }: PublicNavbarProps) {
           href="/"
           className="flex items-center gap-4 rounded-[var(--radius-pill)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-text-primary)]"
         >
-          <SpecForgeLogo />
+          <XernLogo />
           Xern
         </Link>
 
