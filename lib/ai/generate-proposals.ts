@@ -63,6 +63,10 @@ export async function generateProposals(themes: Theme[]): Promise<ProposalOutput
             content: buildProposalPrompt(theme),
           },
         ],
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: "generate-proposal",
+        },
       })
         .then((r) => {
           console.log(`[proposals] proposal[${index}] "${theme.themeName}" done in ${Date.now() - start}ms`);
