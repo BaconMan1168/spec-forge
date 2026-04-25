@@ -1,6 +1,7 @@
 // app/login/page.tsx
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
+import { XernLogo } from "@/components/nav/spec-forge-logo";
 
 export default function LoginPage() {
   return (
@@ -51,7 +52,8 @@ export default function LoginPage() {
 
       {/* Card */}
       <div className="relative w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface-0)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-2)] p-8">
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <XernLogo />
           <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">
             Xern AI
           </h1>
