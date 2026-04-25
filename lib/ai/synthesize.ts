@@ -83,6 +83,10 @@ export async function synthesize(files: FeedbackFile[]): Promise<SynthesisResult
         content: buildUserPrompt(files),
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "synthesize-feedback",
+    },
   });
 
   // Correct any frequency strings where the AI overcounted supporting sources.
