@@ -111,7 +111,13 @@ export function LoginForm() {
     }
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
       if (error) {
         setError(formatAuthError(error));
         setLoading(false);
